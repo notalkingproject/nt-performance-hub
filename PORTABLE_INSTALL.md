@@ -8,7 +8,12 @@ This NT Performance Hub folder is intended to be copied to another Windows machi
 2. Run `Install NT Performance Hub.bat` once.
 3. Run `Start NT Performance Hub.bat`.
 4. Open `http://127.0.0.1:8080/` on the show computer.
-5. On a tablet, open one of the LAN URLs printed by the server, usually `http://<show-computer-ip>:8080/`.
+5. Open `http://127.0.0.1:8080/preflight` to check show readiness.
+6. On a tablet, open one of the LAN URLs printed by the launcher, usually `http://<show-computer-ip>:8080/`.
+
+## System Requirements
+
+Before using a new show machine, review `SYSTEM_REQUIREMENTS.md` for Beat Link Trigger, Resolume, OSC ports, firewall rules, music shares, and tablet/browser access.
 
 ## Configure The New Machine
 
@@ -38,16 +43,24 @@ These stay local to each machine and should not be treated as source:
 - `logs/*.log`
 - `.venv/`
 
-## Diagnostics
+## Preflight And Updates
 
-With the app running, use:
+With the app running, open:
 
-```powershell
-.\.venv\Scripts\python.exe .\tools\diagnostic_check.py --url http://127.0.0.1:8080
+```text
+http://127.0.0.1:8080/preflight
 ```
 
-Without the app running, use:
+Use these scripts for local server operations. To stop a visible running server, close its command window:
 
 ```powershell
-.\.venv\Scripts\python.exe .\tools\diagnostic_check.py
+.\NT Performance Hub Status.bat
+.\Restart NT Performance Hub.bat
 ```
+
+After cloning this repo onto the performance PC, use this to pull laptop changes from GitHub:
+
+```powershell
+.\Update From GitHub.bat
+```
+

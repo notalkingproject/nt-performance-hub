@@ -7,11 +7,11 @@ if not "%~1"=="" set "PORT=%~1"
 
 set "VENV_PYTHON=%CD%\.venv\Scripts\python.exe"
 if exist "%VENV_PYTHON%" (
-  "%VENV_PYTHON%" tools\nt_server_action.py start --port %PORT% --open
+  "%VENV_PYTHON%" tools\nt_server_action.py restart --port %PORT% --open
 ) else (
   where py >nul 2>nul
   if not errorlevel 1 (
-    py -3 tools\nt_server_action.py start --port %PORT% --open
+    py -3 tools\nt_server_action.py restart --port %PORT% --open
   ) else (
     where python >nul 2>nul
     if errorlevel 1 (
@@ -20,17 +20,17 @@ if exist "%VENV_PYTHON%" (
       pause
       exit /b 1
     )
-    python tools\nt_server_action.py start --port %PORT% --open
+    python tools\nt_server_action.py restart --port %PORT% --open
   )
 )
 
 if errorlevel 1 (
   echo.
-  echo Start failed. Check the message above.
+  echo Restart failed. Check the message above.
   pause
   exit /b 1
 )
 
 echo.
-echo NT Performance Hub is running.
+echo NT Performance Hub restarted.
 pause

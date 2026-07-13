@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NT Performance Hub Preflight</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b0f;
+        --panel: #141820;
+        --panel-strong: #1d2430;
+        --line: #2b3340;
+        --text: #eef3f8;
+        --muted: #9aa8b7;
+        --ok: #38d98f;
+        --warn: #f2b84b;
+        --error: #ff5e6c;
+        --accent: #7cc7ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main {
+        width: min(1180px, calc(100vw - 28px));
+        margin: 0 auto;
+        padding: 18px 0 28px;
+      }
+      header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: end;
+        padding: 12px 0 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: clamp(1.5rem, 3vw, 2.2rem); letter-spacing: 0; }
+      .subtitle { color: var(--muted); margin-top: 4px; }
+      .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+      button, a.button {
+        border: 1px solid var(--line);
+        background: var(--panel-strong);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 10px 13px;
+        min-height: 40px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button:hover, a.button:hover { border-color: var(--accent); }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+        margin: 18px 0;
+      }
+      .summary-card, .check-card {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .summary-card strong { display: block; font-size: 1.8rem; line-height: 1; margin-top: 8px; }
+      .summary-card span { color: var(--muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.08em; }
+      .status-banner {
+        border: 1px solid var(--line);
+        background: var(--panel-strong);
+        border-radius: 8px;
+        padding: 14px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+      .status-banner.ready { border-color: color-mix(in srgb, var(--ok), var(--line)); }
+      .status-banner.warnings { border-color: color-mix(in srgb, var(--warn), var(--line)); }
+      .status-banner.blocked { border-color: color-mix(in srgb, var(--error), var(--line)); }
+      .pill {
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-weight: 700;
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+      .pill.ok { background: rgba(56, 217, 143, 0.16); color: var(--ok); }
+      .pill.warning { background: rgba(242, 184, 75, 0.16); color: var(--warn); }
+      .pill.error { background: rgba(255, 94, 108, 0.16); color: var(--error); }
+      .groups { display: grid; gap: 16px; }
+      .group h2 { font-size: 1rem; margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+      .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+      .check-card { display: grid; gap: 8px; min-width: 0; }
+      .check-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+      .check-card h3 { margin: 0; font-size: 1rem; }
+      .check-card p { color: var(--muted); overflow-wrap: anywhere; }
+      .detail { white-space: pre-wrap; }
+      .meta { color: var(--muted); margin-top: 14px; }
+      @media (max-width: 720px) {
+        header { grid-template-columns: 1fr; }
+        .actions { justify-content: flex-start; }
+        .status-banner { align-items: flex-start; flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>NT Performance Hub Preflight</h1>
+          <p class="subtitle">Show-readiness checks for the local server, Git state, media paths, Beat Link, and OSC routing.</p>
+        </div>
+        <div class="actions">
+          <a class="button" href="/">Open Hub</a>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section id="banner" class="status-banner">
+        <div>
+          <h2>Checking...</h2>
+          <p class="subtitle">Waiting for preflight data.</p>
+        </div>
+        <span class="pill warning">WAIT</span>
+      </section>
+
+      <section class="summary" aria-label="Preflight summary">
+        <div class="summary-card"><span>Errors</span><strong id="errors">-</strong></div>
+        <div class="summary-card"><span>Warnings</span><strong id="warnings">-</strong></div>
+        <div class="summary-card"><span>Total Checks</span><strong id="total">-</strong></div>
+        <div class="summary-card"><span>Uptime</span><strong id="uptime">-</strong></div>
+      </section>
+
+      <section id="groups" class="groups"></section>
+      <p id="meta" class="meta"></p>
+    </main>
+
+    <script>
+      const banner = document.querySelector("#banner");
+      const groupsEl = document.querySelector("#groups");
+      const metaEl = document.querySelector("#meta");
+      const refreshButton = document.querySelector("#refresh");
+
+      function pillClass(check) {
+        if (check.ok) return "ok";
+        return check.severity === "error" ? "error" : "warning";
+      }
+
+      function labelFor(check) {
+        if (check.ok) return "OK";
+        return check.severity === "error" ? "BLOCKED" : "WARN";
+      }
+
+      function formatUptime(seconds) {
+        const value = Number(seconds || 0);
+        if (value < 60) return `${Math.round(value)}s`;
+        const minutes = Math.floor(value / 60);
+        const secs = Math.round(value % 60);
+        return `${minutes}m ${secs}s`;
+      }
+
+      function render(data) {
+        const status = data.status || "warnings";
+        banner.className = `status-banner ${status}`;
+        const bannerPill = status === "ready" ? "ok" : status === "blocked" ? "error" : "warning";
+        banner.innerHTML = `
+          <div>
+            <h2>${status === "ready" ? "Ready for show" : status === "blocked" ? "Needs attention" : "Ready with warnings"}</h2>
+            <p class="subtitle">${data.time || ""} - ${data.server?.local_url || ""}</p>
+          </div>
+          <span class="pill ${bannerPill}">${status.toUpperCase()}</span>
+        `;
+
+        document.querySelector("#errors").textContent = data.summary?.errors ?? 0;
+        document.querySelector("#warnings").textContent = data.summary?.warnings ?? 0;
+        document.querySelector("#total").textContent = data.summary?.total ?? 0;
+        document.querySelector("#uptime").textContent = formatUptime(data.uptime_seconds);
+
+        const grouped = new Map();
+        for (const check of data.checks || []) {
+          const category = check.category || "System";
+          if (!grouped.has(category)) grouped.set(category, []);
+          grouped.get(category).push(check);
+        }
+
+        groupsEl.replaceChildren();
+        for (const [category, checks] of grouped.entries()) {
+          const section = document.createElement("section");
+          section.className = "group";
+          const title = document.createElement("h2");
+          title.textContent = category;
+          const list = document.createElement("div");
+          list.className = "checks";
+          for (const check of checks) {
+            const card = document.createElement("article");
+            card.className = "check-card";
+            card.innerHTML = `
+              <div class="check-head">
+                <h3>${check.label}</h3>
+                <span class="pill ${pillClass(check)}">${labelFor(check)}</span>
+              </div>
+              <p><strong>${check.summary || ""}</strong></p>
+              <p class="detail">${check.detail || ""}</p>
+            `;
+            list.append(card);
+          }
+          section.append(title, list);
+          groupsEl.append(section);
+        }
+
+        const urls = data.server?.lan_urls || [];
+        metaEl.textContent = urls.length ? `LAN URLs: ${urls.join("  |  ")}` : "No LAN URLs detected yet.";
+      }
+
+      async function refresh() {
+        refreshButton.disabled = true;
+        try {
+          const response = await fetch("/api/preflight", { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          render(await response.json());
+        } catch (error) {
+          banner.className = "status-banner blocked";
+          banner.innerHTML = `<div><h2>Preflight failed</h2><p class="subtitle">${error.message}</p></div><span class="pill error">ERROR</span>`;
+        } finally {
+          refreshButton.disabled = false;
+        }
+      }
+
+      refreshButton.addEventListener("click", refresh);
+      refresh();
+      setInterval(refresh, 15000);
+    </script>
+  </body>
+</html>

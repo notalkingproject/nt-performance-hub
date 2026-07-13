@@ -1,5 +1,14 @@
 # Changelog
 
+## Show Operations Upgrade - 2026-07-13
+
+- Removed `Stop NT Performance Hub.bat`; closing the visible server window is the clearer stop path, while Restart remains available for reloads.
+
+- Added start, stop, restart, and status launchers backed by `tools/nt_server_control.ps1`.
+- Improved `Update From GitHub.bat` so the performance PC refuses dirty local code, pulls with `--ff-only`, and offers to restart or start the server.
+- Added `/api/preflight` and `/preflight` for show-readiness checks across server health, local config, media paths, Beat Link, OSC targets, Git state, LAN URLs, and uptime.
+- Added `Push To GitHub.bat` for laptop-side commit-and-push updates with a prompted update note.
+
 ## Initial NT Performance Hub Source - 2026-06-29
 
 Purpose: create a clean portable Codex-folder app of the browser app and reduce tablet/runtime load before packaging it for other computers.
@@ -88,3 +97,4 @@ Recent v4 direction:
 ## 2026-07-02 - Live Deck Now Playing controls
 - Reordered visual clip rows so Layer 3 is top, Layer 2 is middle, and Layer 1 is bottom.
 - Added always-visible Album Colors controls and BPM Color Rotation controls to the Live Deck Now Playing card.
+

@@ -58,6 +58,7 @@ DEFAULT_VIDEOGAME_TRACK_TEXT = "Ravenswatch"
 BLT_SOURCE_TIMEOUT_SECONDS = 0.45
 BLT_POLL_TIMEOUT_SECONDS = 0.9
 STATIC_ASSET_CACHE_SECONDS = 120
+SERVER_START_TIME = time.time()
 DEFAULT_TEMPLATE = (
     "COLOR1=indigo;COLOR2=magenta;MOOD=club;ENERGY=3;SECTION=GROOVE;"
     "STROBE_PERCENT=10;COLOR3=purple;SATURATION=100;BRIGHTNESS=100;"
@@ -5215,6 +5216,255 @@ def system_confidence_payload(config: dict[str, Any], blt: dict[str, Any], show:
     return systems
 
 
+def preflight_check(
+    key: str,
+    label: str,
+    ok: bool,
+    summary: str,
+    detail: str = "",
+    severity: str | None = None,
+    category: str = "System",
+) -> dict[str, Any]:
+    return {
+        "key": key,
+        "label": label,
+        "ok": bool(ok),
+        "summary": summary,
+        "detail": detail,
+        "severity": severity or ("ok" if ok else "warning"),
+        "category": category,
+    }
+
+
+def git_preflight_payload() -> dict[str, Any]:
+    git_dir = PROJECT_ROOT / ".git"
+
+    def read_text(path: Path) -> str:
+        try:
+            return path.read_text(encoding="utf-8", errors="ignore").strip()
+        except Exception:
+            return ""
+
+    def read_commit(ref_name: str) -> str:
+        ref_path = git_dir / ref_name
+        commit = read_text(ref_path)
+        if commit:
+            return commit[:7]
+        packed = read_text(git_dir / "packed-refs")
+        for line in packed.splitlines():
+            if line.startswith("#") or not line.strip():
+                continue
+            parts = line.split()
+            if len(parts) == 2 and parts[1] == ref_name:
+                return parts[0][:7]
+        return ""
+
+    head = read_text(git_dir / "HEAD")
+    branch = ""
+    commit = ""
+    if head.startswith("ref: "):
+        ref = head[5:].strip()
+        branch = ref.rsplit("/", 1)[-1]
+        commit = read_commit(ref)
+    elif head:
+        commit = head[:7]
+
+    remote = ""
+    config_text = read_text(git_dir / "config")
+    in_origin = False
+    for raw_line in config_text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("["):
+            in_origin = line == '[remote "origin"]'
+            continue
+        if in_origin and line.startswith("url") and "=" in line:
+            remote = line.split("=", 1)[1].strip()
+            break
+
+    dirty = ""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=0.35,
+            check=False,
+        )
+        if result.returncode == 0:
+            dirty = result.stdout.strip()
+    except Exception:
+        dirty = ""
+
+    return {
+        "branch": branch,
+        "commit": commit,
+        "remote": remote,
+        "dirty": bool(dirty),
+        "dirty_count": len([line for line in dirty.splitlines() if line.strip()]),
+    }
+
+def check_http_json(url: str, timeout: float = 0.35) -> tuple[bool, str]:
+    if not url:
+        return False, "No URL configured."
+    try:
+        with urlopen(url, timeout=timeout) as response:
+            response.read(4096)
+            return 200 <= response.status < 400, f"HTTP {response.status} from {url}"
+    except Exception as exc:
+        return False, f"{url} did not respond: {exc}"
+
+
+def make_preflight_payload(host: str, port: int) -> dict[str, Any]:
+    config = load_config()
+    connection = connection_payload(config, port)
+    git_info = git_preflight_payload()
+    checks: list[dict[str, Any]] = []
+
+    checks.append(preflight_check("server", "App server", True, "Running", f"Serving on {connection['local_control_url']}", category="Server"))
+    checks.append(
+        preflight_check(
+            "config",
+            "Local config",
+            CONFIG_PATH.exists(),
+            "Config file present" if CONFIG_PATH.exists() else "Using defaults",
+            str(CONFIG_PATH),
+            severity="ok" if CONFIG_PATH.exists() else "warning",
+            category="Server",
+        )
+    )
+
+    music_root_raw = text_value(config.get("music_root", ""))
+    music_root = portable_project_path(music_root_raw) if music_root_raw else Path("")
+    checks.append(
+        preflight_check(
+            "music_root",
+            "Music root",
+            bool(music_root_raw and music_root.exists() and music_root.is_dir()),
+            "Ready" if music_root_raw and music_root.exists() and music_root.is_dir() else "Not available",
+            str(music_root) if music_root_raw else "Set Music Root if album-art matching is needed.",
+            severity="warning",
+            category="Media",
+        )
+    )
+
+    artwork_path = artwork_output_path(config)
+    checks.append(
+        preflight_check(
+            "artwork_output",
+            "Current artwork",
+            artwork_path.exists(),
+            "Artwork generated" if artwork_path.exists() else "No current artwork yet",
+            str(artwork_path),
+            severity="ok" if artwork_path.exists() else "warning",
+            category="Media",
+        )
+    )
+    checks.append(
+        preflight_check(
+            "artwork_folder",
+            "Artwork folder",
+            artwork_path.parent.exists(),
+            "Folder exists" if artwork_path.parent.exists() else "Folder missing",
+            str(artwork_path.parent),
+            severity="error" if not artwork_path.parent.exists() else "ok",
+            category="Media",
+        )
+    )
+
+    sources = blt_sources(config)
+    if sources:
+        any_blt_ok = False
+        details: list[str] = []
+        for source in sources[:1]:
+            ok, detail = check_http_json(source.get("url", ""))
+            any_blt_ok = any_blt_ok or ok
+            details.append(f"{source.get('label', 'BLT')}: {detail}")
+        if len(sources) > 1:
+            details.append(f"Skipped {len(sources) - 1} additional BLT source(s) to keep preflight fast.")
+        checks.append(
+            preflight_check(
+                "beatlink",
+                "Beat Link Trigger",
+                any_blt_ok,
+                "Reachable" if any_blt_ok else "Waiting for BLT",
+                "\n".join(details),
+                severity="warning" if not any_blt_ok else "ok",
+                category="Network",
+            )
+        )
+    else:
+        checks.append(preflight_check("beatlink", "Beat Link Trigger", False, "No BLT source configured", "Set BLT URL or network routes in Settings.", severity="warning", category="Network"))
+
+    targets = normalize_osc_targets(config.get("osc_targets", []), config)
+    enabled_targets = [target for target in targets if target.get("enabled") and target.get("host")]
+    checks.append(
+        preflight_check(
+            "osc_targets",
+            "OSC output targets",
+            bool(enabled_targets),
+            f"{len(enabled_targets)} enabled target(s)" if enabled_targets else "No enabled OSC targets",
+            ", ".join(f"{target['label']} {target['host']}:{target['port']}" for target in enabled_targets) or "Configure Resolume/stream OSC targets before show time.",
+            severity="error" if not enabled_targets else "ok",
+            category="Network",
+        )
+    )
+
+    resolume_host = connection.get("resolume_host", "")
+    checks.append(
+        preflight_check(
+            "active_resolume",
+            "Active Resolume route",
+            bool(resolume_host),
+            f"{resolume_host}:{connection.get('resolume_port', '')}" if resolume_host else "No active Resolume host",
+            "UDP OSC cannot confirm delivery, but the route must be configured.",
+            severity="warning" if not resolume_host else "ok",
+            category="Network",
+        )
+    )
+
+    checks.append(
+        preflight_check(
+            "git",
+            "Git version",
+            bool(git_info.get("commit")),
+            f"{git_info.get('branch') or 'unknown'} @ {git_info.get('commit') or 'unknown'}",
+            git_info.get("remote", "No remote configured"),
+            severity="warning" if not git_info.get("commit") else "ok",
+            category="Code",
+        )
+    )
+    checks.append(
+        preflight_check(
+            "git_clean",
+            "Local code changes",
+            not git_info.get("dirty"),
+            "Clean" if not git_info.get("dirty") else f"{git_info.get('dirty_count')} local change(s)",
+            "Push or discard local code changes before updating the performance PC." if git_info.get("dirty") else "Working tree has no local code edits.",
+            severity="warning" if git_info.get("dirty") else "ok",
+            category="Code",
+        )
+    )
+
+    errors = [check for check in checks if not check["ok"] and check["severity"] == "error"]
+    warnings = [check for check in checks if not check["ok"] and check["severity"] == "warning"]
+    return {
+        "ok": not errors,
+        "status": "ready" if not errors and not warnings else "warnings" if not errors else "blocked",
+        "time": datetime.now().isoformat(timespec="seconds"),
+        "uptime_seconds": round(time.time() - SERVER_START_TIME, 1),
+        "app": {"name": "NT Performance Hub"},
+        "server": {
+            "bind_host": host,
+            "port": port,
+            "local_url": connection["local_control_url"],
+            "lan_urls": connection["lan_control_urls"],
+            "preflight_url": f"http://127.0.0.1:{port}/preflight",
+        },
+        "git": git_info,
+        "checks": checks,
+        "summary": {"errors": len(errors), "warnings": len(warnings), "total": len(checks)},
+    }
 def make_status_payload(host: str, port: int, include_settings: bool = True, poll_blt: bool = True) -> dict[str, Any]:
     config = load_config()
     connection = connection_payload(config, port)
@@ -5283,6 +5533,8 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
     quiet_access_log_paths = {
         "/api/artwork/current",
         "/api/generative/state",
+        "/api/identity",
+        "/api/preflight",
         "/api/status",
         "/health",
     }
@@ -5300,6 +5552,12 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/identity":
+            self.send_json({"ok": True, "app": {"name": "NT Performance Hub"}})
+            return
+        if parsed.path == "/api/preflight":
+            self.send_json(make_preflight_payload(self.server.bind_host, self.server.server_port))
+            return
         if parsed.path == "/api/status":
             query = parse_qs(parsed.query)
             include_settings = text_value(query.get("settings", ["1"])[0]).casefold() not in {"0", "false", "no"}
@@ -5312,6 +5570,9 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/generative/state":
             self.send_json(ENGINE.generative_visual_state())
             return
+        if parsed.path == "/preflight":
+            self.path = "/preflight.html"
+            return super().do_GET()
         if parsed.path == "/visuals/generative":
             self.path = "/generative.html"
             return super().do_GET()
@@ -5435,6 +5696,7 @@ def main() -> None:
 
     print("NT Performance Hub - remote control server")
     print(f"Local:  http://localhost:{args.port}/")
+    print(f"Preflight: http://localhost:{args.port}/preflight")
     for url in local_ipv4_addresses():
         print(f"Remote: http://{url}:{args.port}/")
     print("Routine polling logs hidden; errors and commands still print.")
@@ -5449,4 +5711,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 

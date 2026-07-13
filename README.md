@@ -1,261 +1,105 @@
 # NT Performance Hub
 
-This folder is the browser-control app for a DJ/VJ performance system built around Beat Link Trigger, album artwork, lighting color logic, camera cues, visual cues, and Resolume OSC.
+NT Performance Hub is a local browser app for running live show controls from a PC, laptop, phone, or tablet.
 
-The browser app is the main direction for live control from the show computer, another laptop, or an eventual tablet surface. The legacy Tkinter GUI is preserved in `archive/legacy_desktop_gui/` for reference and compatibility.
+It helps control:
 
-## Current Shape
+- Lights and saved looks.
+- Resolume visuals, cameras, scenes, and opacity.
+- Now Playing text from Beat Link Trigger or manual modes.
+- Album artwork colors.
+- Browser-based generative visuals.
+- Show sequences.
 
-The browser app is a performance hub with these major sections:
+## Quick Start
 
-- **Lights** - modular live lighting workspace with looks and compact BPM in a sub-pane, and primary color/slider controls first in the main pane.
-- **Visuals** - Resolume visual cue buttons, visual opacity, and browser-rendered generative visuals.
-- **Cameras** - main, PIP, background, and scene trigger groups with visually separated trigger banks.
-- **Looks** - combined performance presets and linked cues. A look can store lighting values, Now Playing mode, section preset, visual cue, generative visual settings, camera cues, background cue, and scene cue.
-- **Sequencer** - saved Show sequences that arrange looks over bars, beats, seconds, or minutes.
-- **Now Playing** - BeatLink / BLT metadata, album artwork monitoring, manual modes, and stream text OSC outputs.
-- **Settings** - core config plus section-specific OSC settings.
-- **Log** - recent OSC sends and app events.
+Double-click:
 
-The app uses a left rail so the current preview and section navigation stay available while the main right pane shows the selected work area.
-
-## Folder Structure
-
-- `app.py` - local HTTP server, status API, config API, OSC sender, preset engine, artwork palette logic, camera/visual/Now Playing commands.
-- `web/index.html` - browser app structure.
-- `web/app.js` - browser app state, UI rendering, command handlers, settings editors, look editor, OSC builder.
-- `web/styles.css` - tablet-oriented dark UI styling.
-- `web/generative.html`, `web/generative.js`, `web/generative.css` - fullscreen browser-rendered generative visual output.
-- `Start NT Performance Hub.bat` - Windows launcher for the browser app server.
-- `Install NT Performance Hub.bat` - one-time Windows setup for the local Python environment.
-- `Update From GitHub.bat` - performance-PC updater after the GitHub remote is connected.
-- `config/` - local app configuration and visual defaults.
-- `data/` - generated music-library index data.
-- `logs/` - generated performance and track-history logs.
-- `archive/legacy_desktop_gui/` - preserved desktop GUI.
-- `beatlink_watcher_resolume_osc.py` - Beat Link Trigger polling, MP3 matching, metadata, and OSC helpers.
-- `extract_album_artwork.py` - embedded artwork extraction helper.
-- `DESIGN_PRINCIPLES.md` - product and engineering guidance for future UI/code changes.
-
-Project notes:
-
-- `CHANGELOG.md` tracks the change history.
-- `PORTABLE_INSTALL.md` is the install/run guide for another Windows machine or a local show computer.
-- `config/app_config.example.json` is a portable starting point; copy it to `config/app_config.json` only on the machine you are setting up.
-
-Generated local state is not intended as source code:
-
-- `data/music_library_index.json`
-- `config/app_config.json`
-- `config/visual_defaults.json`
-- `logs/performance_lighting_YYYY-MM-DD.csv`
-- `logs/track_color_history_YYYY-MM-DD.csv`
-
-## Launch
-
-Run the app server:
-
-```powershell
-.\Start NT Performance Hub.bat
+```text
+Start NT Performance Hub.bat
 ```
 
-Then open this on the show computer:
+Then open:
 
 ```text
 http://127.0.0.1:8080/
 ```
 
-For another computer or tablet, open the LAN address shown by the server, for example:
+To use a phone, tablet, or another computer, open the LAN address printed by the Start or Status window. It will look like:
 
 ```text
 http://192.168.1.50:8080/
 ```
 
-If another device cannot connect, check that it is on the same network and that Windows Firewall allows inbound access to port `8080` for Python.
-
-## OSC Outputs
-
-The app can send every OSC command to multiple Resolume receivers. Manage this in **Settings -> OSC Output Targets**.
-
-Current configured targets:
-
-- Laptop Resolume: `192.168.1.189:7000`
-- Stream PC: `192.168.1.9:7000`
-
-The legacy **Active Resolume IP** remains the primary target for compatibility, but live commands fan out to every enabled OSC target.
-
-## Looks
-
-Looks are now the center of the performance workflow.
-
-A look can store:
-
-- Primary, secondary, and accent colors.
-- Motion, strobe, saturation, brightness, FX, and pulse percentages.
-- Now Playing mode: CDJ metadata, Vinyl mode, or NO TALKING STUDIO.
-- Section preset.
-- Visual cue.
-- Generative visual preset, intensity, complexity, motion, beat response, color source, phrase morph, seed behavior, quality, and output level.
-- Main camera cue.
-- PIP camera cue.
-- Background camera cue.
-- Scene cue.
-
-On the Looks page, each card can be edited directly. The light controls on the card send live while you adjust them. **Save** stores the edited light values plus cue selections, and **Trigger** launches that saved look. Empty cue fields such as `None` or `No change` simply do nothing for that category.
-
-The Lights page also exposes looks as a vertical sub-pane so performance presets stay available without forcing the main color and slider controls below the fold.
-
-The Look Builder includes an editable **Look Name** field. Typing a new name and saving creates a new look from the current live light state plus the selected cue links. Editing an existing card name and saving renames that look.
-
-## Generative Visuals
-
-Open the fullscreen output at:
+Before a show, open:
 
 ```text
-http://127.0.0.1:8080/visuals/generative
+http://127.0.0.1:8080/preflight
 ```
 
-This page renders mathematical visuals in the browser on a black projection-friendly canvas. Capture that browser window into Resolume, OBS, NDI, Spout, or a normal window/browser source. For Resolume, open the visualizer in a dedicated browser window, then use the browser/window capture route that fits your show computer setup.
+## The Main Buttons
 
-The left rail includes a dedicated **Generator** section with an embedded live preview, selected color swatches, thumbnail preset cards, mood/use descriptions, BPM sync automation, and live controls for preset, color source, intensity, complexity, motion, beat response, scale, zoom, rotation, symmetry, warp, line width, trail, phrase morph, auto seed, quality, freeze, stop, and output level. Changes send immediately to the Python server. The server owns the current state and exposes it through `/api/generative/state`.
+- `Start NT Performance Hub.bat` starts the app.
+- `Restart NT Performance Hub.bat` restarts the app when you want a clean reload.
+- `NT Performance Hub Status.bat` shows the local URL, tablet URL, health, and process ID.
+- `Install NT Performance Hub.bat` sets up Python packages on a new machine.
+- `Push To GitHub.bat` saves laptop edits to GitHub.
+- `Update From GitHub.bat` pulls the latest version onto the performance PC.
 
-Starter presets:
+## Stopping The App
 
-- Lissajous Orbit.
-- Moire Grid.
-- Superformula Mandala.
-- Particle Vortex.
-- Shader Plasma.
-- Harmonic Tunnel.
-- Vector Field.
-- Crystal Rings.
-- Wave Ribbons.
-- Starfield Gate.
-- Kaleido Mesh.
-- Liquid Topo.
-- Pulse Bars.
-- Constellation Web.
-- Scanline Bloom.
-- Orbital Dust.
+If the server is running in a command window, close that window to stop the app.
 
-Looks can store generative visual settings alongside light values, Now Playing mode, Resolume visual cue, cameras, and scene. When a Show triggers a Look, any stored generative visual settings apply naturally because Shows trigger Looks.
+Use `Restart NT Performance Hub.bat` when you want to reload the server without thinking through the stop/start steps.
 
-Visualizer keyboard controls:
+## What You Need
 
-- `1`-`5` select starter presets locally.
-- `H` toggles the debug overlay.
-- `F` requests fullscreen.
-- `Q` cycles quality.
-- `Space` freezes or unfreezes animation locally.
-- `0` toggles blackout locally.
+Basic app requirements:
 
-Performance troubleshooting:
+- A Windows PC to run the server.
+- Python 3.11 or newer.
+- A modern browser.
+- Same network or Wi-Fi for phones, tablets, and other PCs.
+- Windows Firewall allowing Python on private networks.
 
-- The visualizer continues rendering from the last known state if polling disconnects.
-- The debug overlay shows connection and FPS.
-- Quality automatically steps down if FPS stays below 25 for more than five seconds.
-- If a preset throws, the renderer falls back to Lissajous Orbit.
-- Use **Stop** in the Visuals panel for a server-owned blackout/disabled state.
+Show-system requirements:
 
-## Sequencer
+- Beat Link Trigger if you want live CDJ / Pro DJ Link Now Playing data.
+- Resolume if you want visuals, cameras, scenes, or text layers controlled by OSC.
+- Stable IP addresses or machine names for show devices.
+- A readable music folder if using artwork matching.
 
-The Sequencer page is the automation layer: a saved **Show** is a named list of look triggers. A look already contains the light values, Now Playing mode, visual cue, camera cues, opacity choices, and scene cue, so sequencing a show means sequencing complete performance states.
+Read `SYSTEM_REQUIREMENTS.md` for the plain-English show setup checklist.
 
-Each sequence step stores:
+## GitHub Workflow
 
-- The look link to trigger.
-- Trigger style: after the previous step or at show time.
-- Amount.
-- Unit: bars, beats, seconds, or minutes.
-- A note or song-section label.
-
-`After previous` waits that amount before firing the row. `At show time` treats the amount as an absolute position from the start of playback.
-
-The show transport can **Play**, **Pause**, **Stop**, and **Next Step** directly from the browser. Enable **Loop Show** for repeating song-section cycles, ambient holding patterns, rehearsal passes, or podcast/live-stream beds that should keep rotating until stopped.
-
-This is intended to support full-show automation, podcast/feed production, and song-section cueing where looks advance by musical section or by timed events. Bars and beats use the current app BPM, including Now Playing BPM when follow mode is active.
-
-## OSC Mapping
-
-OSC settings are section-local so you can edit addresses near the controls they affect:
-
-- Lights OSC lives with Lights.
-- Visual OSC lives with Visuals.
-- Camera and scene OSC lives with Cameras.
-- Now Playing text OSC lives with Now Playing.
-
-Resolume-style OSC address fields include an OSC builder. You can edit:
-
-- Layer type: group or layer.
-- Layer / group number.
-- Column type: column or clip.
-- Column / clip number.
-- Action path.
-
-The full OSC address can still be typed manually. If it matches the Resolume path pattern, the builder reads it back into the smaller fields. This is meant for fast changes when Resolume layer or column numbers shift.
-
-OSC builder controls wrap inside their section cards so long Lights OSC mappings stay editable without pushing the page sideways.
-
-## Artwork + Now Playing
-
-The app monitors album artwork and BeatLink / BLT metadata separately from the lighting surface, while still showing artwork controls near Lights for fast color matching.
-
-The artwork color matcher can:
-
-- Extract colors from the current artwork.
-- Apply a detected palette to primary, secondary, and accent.
-- Preserve current preset colors when desired.
-- Use automatic artwork colors.
-- Use fallback-only behavior.
-- Pick neutral primary, neutral secondary, and neutral accent colors for black, white, gray, or low-saturation covers.
-
-The palette algorithm prefers distinct saturated artwork colors first. If an album cover is dominated by whites, blacks, grays, or does not produce enough distinct colors, it fills the missing roles from the configured neutral colors.
-
-## Live Controls
-
-Most performance controls send immediately when changed. The old individual Send-button pattern is being phased out in favor of:
-
-- Tap buttons for cue changes.
-- Sliders for continuous values.
-- Stop buttons for setting intensity-style values to zero.
-- Save buttons only for configuration or preset persistence.
-
-## Setup
-
-Install Python dependencies:
-
-```powershell
-py -m pip install -r requirements.txt
-```
-
-If `py` is not available:
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-## Legacy Desktop GUI
-
-Run:
-
-```powershell
-.\archive\legacy_desktop_gui\Start Legacy Desktop GUI.bat
-```
-
-Use the browser app for new live-control work. The archived desktop GUI stays available for compatibility checks and old workflows.
-
-## Logs
-
-The detailed daily OSC log is saved as:
+On the laptop where you edit:
 
 ```text
-logs/performance_lighting_YYYY-MM-DD.csv
+Push To GitHub.bat
 ```
 
-A setlist-friendly history is saved as:
+On the performance PC:
 
 ```text
-logs/track_color_history_YYYY-MM-DD.csv
+Update From GitHub.bat
 ```
 
-The history includes track load/end rows, MP3 comments, suggested color comments, selected colors, source, and matched file.
+Machine-specific config, logs, generated data, and PID files stay local and are ignored by Git.
+
+## Important Files
+
+- `app.py` is the local web server and show-control engine.
+- `web/` contains the browser interface.
+- `config/app_config.example.json` is the starting config for a new machine.
+- `SYSTEM_REQUIREMENTS.md` explains the needed show software and connections.
+- `PORTABLE_INSTALL.md` explains setup on another Windows machine.
+- `DESIGN_PRINCIPLES.md` explains design direction for future edits.
+- `CHANGELOG.md` tracks notable changes.
+
+## Python Packages
+
+`requirements.txt` is only for Python packages installed by `pip`.
+
+It does not list Beat Link Trigger, Resolume, CDJs, network gear, or firewall settings. Those are covered in `SYSTEM_REQUIREMENTS.md`.
+
