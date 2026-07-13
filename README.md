@@ -40,7 +40,6 @@ The app uses a left rail so the current preview and section navigation stay avai
 Project notes:
 
 - `CHANGELOG.md` tracks the change history.
-- `DIAGNOSTIC_SWEEP.md` records the performance findings and checks.
 - `PORTABLE_INSTALL.md` is the install/run guide for another Windows machine or a local show computer.
 - `config/app_config.example.json` is a portable starting point; copy it to `config/app_config.json` only on the machine you are setting up.
 

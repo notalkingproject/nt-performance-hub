@@ -1,6 +1,6 @@
 # Changelog
 
-## nt-performance-hub - 2026-06-29
+## Initial NT Performance Hub Source - 2026-06-29
 
 Purpose: create a clean portable Codex-folder app of the browser app and reduce tablet/runtime load before packaging it for other computers.
 
@@ -17,7 +17,7 @@ Changes:
 - Bumped browser asset query strings for the layout hotfix so tablets fetch the updated CSS and JS immediately.
 - Tightened the Live Deck staged-preview strip so the Next state, GO, Clear, and Tap Route controls share space cleanly on tablet instead of leaving a large empty state panel and squeezed route controls.
 - Added visibility-aware browser polling so hidden tablets pause live refreshes and resume with a full refresh.
-- Added `Install Portable App.bat`, `PORTABLE_INSTALL.md`, `DIAGNOSTIC_SWEEP.md`, `tools/diagnostic_check.py`, and `config/app_config.example.json`.
+- Added `Install NT Performance Hub.bat`, `PORTABLE_INSTALL.md`, `tools/diagnostic_check.py`, and `config/app_config.example.json`.
 
 - Reworked Settings network routing around machines with multiple saved IP addresses, clearer tablet connector URLs, and automatic deduped OSC fan-out to every saved machine route.
 - Simplified the Looks page and default look bank to open-ended Look 1 through Look 10 entries that only store Color 1, Color 2, and Color 3, while preserving route links for Lights, Visuals, Main Cam, PIP Cam, Background, and Scene triggers.
@@ -31,7 +31,7 @@ Verification target:
 - Local `/health`, light `/api/status`, and full `/api/status` timing checks
 - Browser smoke check at tablet landscape and portrait sizes
 
-## v4 - previous folder
+## Previous Source Folder
 
 Purpose: browser control app for live Lights, Visuals, Cameras, Looks, Sequencer, Now Playing, Settings, and Log sections.
 

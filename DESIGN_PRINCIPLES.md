@@ -1,26 +1,29 @@
 # Design Principles
 
-This document is the working product and engineering guide for Beatlink + Resolume. It should be updated when the app direction changes, and it should be read before major UI or control-flow changes.
+This document is the working product and engineering guide for NT Performance Hub. It should be updated when the app direction changes, and it should be read before major UI or control-flow changes.
 
 ## Product Goal
 
-Build a fast, tablet-friendly performance control surface for DJ/VJ sets.
+Build a fast, tablet-friendly performance hub for NO TALKING DJ/VJ sets, stream control, and show automation.
 
-The app should let the performer move through a set without thinking about file paths, OSC syntax, or multiple disconnected tools. A song, look, artwork state, camera cue, visual cue, and stream display should feel like one connected performance decision.
+The app should let the performer move through a set without thinking about file paths, OSC syntax, or multiple disconnected tools. A song, look, artwork state, camera cue, visual cue, generator state, and stream display should feel like one connected performance decision.
 
 ## Core Workflow
 
-The app is organized around live performance sections:
+The app is organized around a fast Live Deck plus detailed section pages:
 
+- **Live Deck** is the primary performance surface. It exposes the most-used controls from each function in one place and supports Live / Preview cue routing with a global GO action.
 - **Lights** controls immediate color and motion output.
 - **Visuals** controls Resolume visual clips and visual opacity.
 - **Generator** controls browser-rendered generative visual output, preview, presets, and capture routing.
 - **Cameras** controls main, PIP, background, scenes, and camera opacity.
-- **Looks** combines lighting presets with linked Now Playing, visual, camera, and scene cues.
+- **Looks** combines lighting presets with linked Now Playing, visual, generator, camera, and scene cues.
+- **Sequencer** turns saved Looks into Show timelines using bars, beats, seconds, or minutes.
 - **Now Playing** monitors metadata, album artwork, and stream text output.
 - **Settings** configures the system without hiding important OSC mappings far away from the feature they affect.
+- **Log** keeps recent OSC sends and app events visible for troubleshooting.
 
-Looks are the main composition layer. If a performer wants "Vinyl Mode with these colors and this camera angle," that should be a look.
+Looks are the main composition layer. If a performer wants "Vinyl Mode with these colors, this generator preset, and this camera angle," that should be a look.
 
 Shows are the sequencing layer. If a performer wants an entire podcast episode, DJ set, or song arrangement to progress through looks automatically, that should be saved as a Show.
 
@@ -48,7 +51,7 @@ Shows are the sequencing layer. If a performer wants an entire podcast episode, 
 
 6. Save means persistence. Change means performance.
 
-   Live controls should send when changed. Save buttons should store configuration, presets, looks, OSC maps, or defaults. Avoid Send buttons for ordinary live values, except the explicit A/B look workflow where "Send to Preview" stages a look and "Send to Active" launches it.
+   Live controls should send when changed. Save buttons should store configuration, presets, looks, OSC maps, or defaults. Avoid Send buttons for ordinary live values, except the explicit Live / Preview workflow where Preview stages cues and GO launches the staged cue bundle.
 
 7. Use clear performance language.
 
@@ -82,13 +85,13 @@ Shows are the sequencing layer. If a performer wants an entire podcast episode, 
 
    Avoid spending the top of the performance page on app branding or generic connection pills. Connection state can live in status/detail areas; the first visible row of the performance surface should be the Active Moment strip.
 
-15. Looks use an Active / Preview flow on the Live Deck.
+15. Looks use a Live / Preview flow on the Live Deck.
 
-   The Live Deck should support A/B operation: Active Look stays visible, Send to Preview stages a look, and Send to Active launches the staged preview. Active and Preview should show the same detail structure so the performer can compare them at a glance. The detailed Looks page can remain the place for editing and direct look management.
+   The Live Deck should support A/B operation: the live state stays visible, Preview stages a look or cue bundle, and GO launches the staged preview. Active and Next/Preview should show parallel structure so the performer can compare them at a glance. The detailed Looks page can remain the place for editing and direct look management.
 
 16. Look state includes light state.
 
-   Do not split "Look" and "Light Output" into competing status cards when they describe the same current performance state. The top Active Moment strip should consolidate current light colors and look name into simple Active Look and Preview Look cards.
+   Do not split "Look" and "Light Output" into competing status cards when they describe the same current performance state. The top Active Moment strip should consolidate current light colors and look name into simple Active and Next/Preview look cards.
 
 17. Hide no-change noise in the performance HUD.
 
@@ -108,8 +111,8 @@ The app is a performance surface, so buttons need a consistent hierarchy. Use th
 - **Stop / blackout / zero actions**: same size as nearby primary actions, but visually distinct with restrained red styling.
 - **Visibility toggles**: 30-34px tall chips or checkbox-backed segmented controls. Use fixed chip widths on the Live Deck so the show/hide row stays predictable; use them to show/hide dashboard panels, not to navigate to another page.
 - **Sequencer performance cues**: 34-42px tall compact cue buttons with a small index and truncated cue name. The Live Deck Sequencer should expose Play, Pause, Next, Stop, Loop, and immediate cue triggers without becoming the full editor.
-- **Active moment strip**: 58-88px tall status cells inside a distinct top band. Active Look and Preview Look are the first wide cells and should share the same detail structure; the remaining status cells should use fixed, compact rhythm with short labels and single-line values.
-- **A/B preview controls**: Active and Preview cells sit above look buttons, with clear Send to Preview and Send to Active actions.
+- **Active moment strip**: 58-88px tall status cells inside a distinct top band. Active and Next/Preview look cells are the first wide cells and should share the same detail structure; the remaining status cells should use fixed, compact rhythm with short labels and single-line values.
+- **A/B preview controls**: Live and Preview routing controls sit above cue buttons, with a clear GO action for staged cues.
 - **Momentary buttons**: same height as nearby cue pads, amber active state, no sticky toggle behavior.
 - **Sliders and selects**: keep labels above or beside controls with a stable row height. A compact slider card should be roughly 68-76px tall; avoid letting CSS grid stretch it taller just because the parent has extra space.
 
@@ -152,6 +155,7 @@ A look should be editable in one place and should include:
 - Now Playing mode: CDJ metadata, Vinyl mode, NO TALKING STUDIO, or no change.
 - Section preset.
 - Visual cue.
+- Generator preset and generator state.
 - Main camera cue.
 - PIP camera cue.
 - Background camera cue.
@@ -159,7 +163,7 @@ A look should be editable in one place and should include:
 
 When editing a look, the user should be able to hear/see changes immediately, then save once.
 
-Do not expose a separate "linked" toggle in the main look editor. A look always stores all selected settings; empty values mean no change.
+Do not expose a separate "linked" toggle in the main look editor. A look stores all selected settings; empty values mean no change. Runtime controls may still let the performer trigger media cues while leaving the current light output held, such as when **Apply Lights with Looks** is off.
 
 Look names must be editable wherever a look is being built. Typing a new name and saving should create a new look instead of forcing the user into a separate preset table.
 
