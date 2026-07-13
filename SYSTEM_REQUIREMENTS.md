@@ -19,9 +19,9 @@ You need:
 
 ## What The App Does
 
-NT Performance Hub is an OSC control hub.
+NT Performance Hub is a phone/tablet-friendly OSC control hub for live DJ performance.
 
-In this setup, the app sends OSC values that we control. Those values can come from buttons, sliders, looks, sequences, album artwork, manual Now Playing modes, or Beat Link Trigger data.
+In this setup, the app lets you use a phone, tablet, or browser to match lights, control visuals, recall looks, and adjust performance parameters while DJing. It sends OSC values that we control. Those values can come from buttons, sliders, looks, sequences, album artwork, manual Now Playing modes, or Beat Link Trigger data.
 
 The preferred target is Resolume. Resolume then handles the visual and light-control side of the show.
 
@@ -29,7 +29,7 @@ The preferred target is Resolume. Resolume then handles the visual and light-con
 
 - Performance PC: runs NT Performance Hub and Resolume, ideally connected by Ethernet.
 - Laptop: used for editing the app and pushing updates to GitHub.
-- Phone/tablet: opens the web app over Wi-Fi for live control.
+- Phone/tablet: opens the web app over Wi-Fi for on-the-fly performance control while DJing.
 - CDJs: connected together on the Ethernet / Pro DJ Link network.
 - Beat Link Trigger machine: listens to the CDJs and exposes track/player data.
 - Resolume machine: receives OSC commands from NT Performance Hub.
@@ -142,3 +142,4 @@ config/app_config.example.json
 10. Confirm Git state is clean enough for the performance PC.
 
 Warnings are normal if show hardware is disconnected. Errors are the things to fix before depending on the system live.
+

@@ -1,13 +1,13 @@
 # NT Performance Hub
 
-NT Performance Hub is a local browser app for running live show controls from a PC, laptop, phone, or tablet.
+NT Performance Hub is a local browser app for running live show controls from a PC, laptop, phone, or tablet. Its main purpose is to give you a phone/tablet control surface while DJing, so you can match lights, trigger visuals, recall looks, and adjust performance parameters on the fly.
 
 The main use case is simple: NT Performance Hub sends OSC control values for performance parameters, preferably to Resolume. In our setup, Resolume is the visual and light-control hub.
 
 It helps control:
 
-- Lights and saved looks.
-- Resolume visuals, cameras, scenes, and opacity.
+- Lights, saved looks, and fast color matching from a phone or tablet.
+- Resolume visuals, cameras, scenes, opacity, and performance parameters.
 - Now Playing text from Beat Link Trigger or manual modes.
 - Album artwork colors.
 - Browser-based generative visuals.
@@ -18,7 +18,7 @@ It helps control:
 - CDJs are connected together on the same Ethernet / Pro DJ Link network.
 - [Beat Link Trigger](https://github.com/Deep-Symmetry/beat-link-trigger) listens to the CDJs on that network.
 - The master player drives Now Playing, so the app follows the track currently leading the DJ set.
-- NT Performance Hub turns looks, buttons, sliders, artwork colors, and Now Playing data into OSC values.
+- NT Performance Hub turns phone/tablet touches, looks, buttons, sliders, artwork colors, and Now Playing data into OSC values.
 - Resolume receives those OSC values and uses them to control visuals, lights, text layers, camera scenes, and other performance parameters.
 
 ## Quick Start
@@ -113,3 +113,4 @@ Machine-specific config, logs, generated data, and PID files stay local and are 
 `requirements.txt` is only for Python packages installed by `pip`.
 
 It does not list Beat Link Trigger, Resolume, CDJs, network gear, or firewall settings. Those are covered in `SYSTEM_REQUIREMENTS.md`.
+
