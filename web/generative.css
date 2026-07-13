@@ -1,0 +1,74 @@
+:root {
+  color-scheme: dark;
+  --text: #f4f7fb;
+  --muted: #a8b1c2;
+  --accent: #17c964;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+body {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+#visualCanvas,
+#shaderCanvas,
+#overlayCanvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+}
+
+#visualCanvas.hidden,
+#shaderCanvas.hidden {
+  display: none;
+}
+
+#overlayCanvas {
+  background: transparent;
+  pointer-events: none;
+}
+
+.debug-overlay {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  display: grid;
+  gap: 5px;
+  max-width: min(460px, calc(100vw - 36px));
+  padding: 12px 14px;
+  border: 1px solid rgba(125, 255, 169, 0.22);
+  border-radius: 8px;
+  background: rgba(5, 8, 12, 0.72);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.3;
+  backdrop-filter: blur(8px);
+}
+
+.debug-overlay.hidden {
+  display: none;
+}
+
+.debug-overlay strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.debug-overlay .online {
+  color: #7dffa9;
+}
+
+.debug-overlay .offline {
+  color: #ff9d9d;
+}

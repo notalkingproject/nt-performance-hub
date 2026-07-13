@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NT Performance Hub</title>
+    <link rel="stylesheet" href="/styles.css?v=20260711-artpal1">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar" hidden>
+        <div class="status-pill" id="connectionStatus">Connecting</div>
+        <p class="muted" id="lastEvent">Waiting for command.</p>
+      </header>
+
+      <nav class="tabs" aria-label="App sections">
+        <section class="panel performance-track-panel">
+          <div class="panel-title">
+            <span>Now Playing Metadata</span>
+          </div>
+          <div class="sidebar-mini-nav">
+            <button class="tab-button mini-tab-button" type="button" data-section="nowPlayingSection" data-step="01">Now Playing</button>
+          </div>
+          <div class="now-playing-preview-row">
+            <div class="mini-artwork-frame">
+              <img id="previewArtworkImage" alt="Current artwork thumbnail">
+              <div class="mini-empty-state" id="previewArtworkEmpty">Art</div>
+            </div>
+            <div class="now-playing-preview-copy">
+              <span>Current Display</span>
+              <strong id="perfTrackDisplay">Waiting for artwork</strong>
+            </div>
+          </div>
+          <dl class="performance-track-grid">
+            <div class="wide"><dt>Track</dt><dd id="perfTrackNowPlaying">Waiting for BeatLink watcher data</dd></div>
+            <div><dt>Artist</dt><dd id="perfTrackArtist">-</dd></div>
+            <div><dt>Album</dt><dd id="perfTrackAlbum">-</dd></div>
+            <div><dt>BPM</dt><dd id="perfTrackBpm">-</dd></div>
+            <div><dt>Player</dt><dd id="perfTrackPlayer">-</dd></div>
+            <div><dt>Mode</dt><dd id="perfTrackMode">-</dd></div>
+          </dl>
+        </section>
+
+        <button class="tab-button workflow-tab tablet-now-playing-tab" type="button" data-section="nowPlayingSection" data-step="01">Now Playing</button>
+        <button class="tab-button workflow-tab active" type="button" data-section="liveDeckSection" data-step="02">Live Deck</button>
+        <button class="tab-button workflow-tab" type="button" data-section="lightsSection" data-step="03">Lights</button>
+        <button class="tab-button workflow-tab" type="button" data-section="visualsSection" data-step="04">Visuals</button>
+        <button class="tab-button workflow-tab" type="button" data-section="camerasSection" data-step="05">Cams</button>
+        <button class="tab-button workflow-tab" type="button" data-section="looksSection" data-step="06">Looks</button>
+        <button class="tab-button workflow-tab" type="button" data-section="sequencerSection" data-step="07">Sequences</button>
+        <button class="tab-button tool-tab" type="button" data-section="generatorSection">Generator</button>
+        <button class="tab-button" type="button" data-section="settingsSection">Settings</button>
+        <button class="tab-button" type="button" data-section="logSection">Log</button>
+        <article class="panel show-status-panel">
+          <div class="panel-title">
+            <span>Show Computer</span>
+          </div>
+          <dl class="stats compact-stats">
+            <div><dt>Profile</dt><dd id="connectionProfile">-</dd></div>
+            <div><dt>Server</dt><dd id="serverAddress">-</dd></div>
+            <div><dt>Resolume</dt><dd id="resolumeAddress">-</dd></div>
+            <div><dt>BLT Params</dt><dd id="bltAddress">-</dd></div>
+            <div><dt>Config</dt><dd id="configState">-</dd></div>
+          </dl>
+        </article>
+        <article class="panel selection-status-panel">
+          <div class="panel-title">
+            <span>Current Selection</span>
+          </div>
+          <dl class="stats compact-stats">
+            <div><dt>Look</dt><dd id="selectedLook">-</dd></div>
+            <div><dt>Colors</dt><dd id="selectedColors">-</dd></div>
+            <div><dt>Visual</dt><dd id="selectedVisual">-</dd></div>
+            <div><dt>Cameras</dt><dd id="selectedCameras">-</dd></div>
+            <div><dt>Now</dt><dd id="selectedNowPlaying">-</dd></div>
+          </dl>
+        </article>
+      </nav>
+
+      <div class="active-moment-shell" aria-label="Persistent active moment preview">
+        <div id="activeMomentStrip" class="active-moment-strip" aria-label="Active moment summary"></div>
+        <div class="performance-command-bar" aria-label="System confidence and safety">
+          <div id="systemConfidence" class="system-confidence" aria-label="System confidence"></div>
+          <button id="panicSafeButton" class="panic-safe-button" type="button" aria-describedby="panicSafeHint">Hold SAFE</button>
+          <span id="panicSafeHint" class="sr-only">Hold for one second to stop automation and recall the configured safe state.</span>
+        </div>
+      </div>
+
+      <section id="liveDeckSection" class="section-view active">
+        <div class="live-deck-header">
+          <div>
+            <h2>Live Deck</h2>
+            <p id="liveDeckViewSummary" class="live-deck-summary">7 panels visible</p>
+          </div>
+          <details class="live-deck-customize">
+            <summary>Customize deck</summary>
+            <div class="live-deck-controls">
+              <div class="live-deck-control-group">
+                <span class="live-deck-control-label">Show / hide functions</span>
+                <div class="live-deck-visibility" role="group" aria-label="Show or hide Live Deck panels">
+                  <label><input type="checkbox" data-live-panel-toggle="looks" checked><span>Looks</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="lights" checked><span>Lights</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="visuals" checked><span>Visuals</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="cameras" checked><span>Cams</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="sequences" checked><span>Sequences</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="generator" checked><span>Generator</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="now-playing" checked><span>Now</span></label>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <section class="panel performance-command-panel">
+          <div class="panel-title">
+            <span>Next / Staged</span>
+            <span id="stagedCueHint" class="panel-hint">Live is the default. Switch to Preview only when you want to stage a cue.</span>
+          </div>
+          <div id="stagedCueLane" class="staged-cue-lane"></div>
+          <div class="look-light-mode-strip" aria-label="Look lighting mode">
+            <button class="small-toggle look-lights-toggle" type="button" data-look-lights-toggle>Look Lights</button>
+          </div>
+          <div class="live-look-capture" aria-label="Save current show state as a look">
+            <label class="live-look-capture-field">
+              <span>Save Current Show State As</span>
+              <input id="liveDeckLookName" type="text" autocomplete="off" placeholder="Look label">
+            </label>
+            <button id="saveLiveDeckLook" type="button">Save Look</button>
+            <small id="liveDeckSaveStatus">Captures the active live state.</small>
+          </div>
+          <div class="song-moment-header">
+            <strong>Song moments</strong>
+            <span>These only stage a suggestion. They never fire it.</span>
+          </div>
+          <div id="songMomentMarkers" class="song-moment-markers"></div>
+        </section>
+
+
+        <div class="live-deck-grid">
+          <section class="panel live-deck-card live-look-card" data-live-panel-card="looks">
+            <div class="panel-title">
+              <span>Looks</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#looksSection" data-section-link="looksSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="looks">Hide</button>
+              </div>
+            </div>
+            <div id="overviewLookPreview" class="overview-look-preview"></div>
+            <div id="overviewLookGrid" class="overview-look-grid"></div>
+          </section>
+
+          <section class="panel live-deck-card live-light-card" data-live-panel-card="lights">
+            <div class="panel-title">
+              <span>Lights</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#lightsSection" data-section-link="lightsSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="lights">Hide</button>
+              </div>
+            </div>
+            <div id="overviewLightState" class="overview-light-state"></div>
+            <div id="overviewLightControls" class="overview-light-controls"></div>
+            <div class="overview-relationship-row">
+              <button type="button" data-command="rotate_colors">Rotate Selected</button>
+              <button type="button" data-relationship="complement">Complement</button>
+              <button type="button" data-relationship="analogous">Analogous</button>
+              <button type="button" data-relationship="triad">Triad</button>
+              <button type="button" id="overviewPulseHold" class="momentary-button">Pulse Hold</button>
+            </div>
+            <div id="overviewBpmControls" class="overview-bpm-controls"></div>
+          </section>
+
+          <section class="panel live-deck-card live-now-playing-card" data-live-panel-card="now-playing">
+            <div class="panel-title">
+              <span>Now Playing</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#nowPlayingSection" data-section-link="nowPlayingSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="now-playing">Hide</button>
+              </div>
+            </div>
+            <div id="overviewNowPlaying" class="overview-now-playing"></div>
+          </section>
+
+          <section class="panel live-deck-card live-visual-card" data-live-panel-card="visuals">
+            <div class="panel-title">
+              <span>Visuals</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#visualsSection" data-section-link="visualsSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="visuals">Hide</button>
+              </div>
+            </div>
+            <div id="overviewVisualGrid" class="overview-button-grid"></div>
+          </section>
+
+          <section class="panel live-deck-card live-generator-card" data-live-panel-card="generator">
+            <div class="panel-title">
+              <span>Generator</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#generatorSection" data-section-link="generatorSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="generator">Hide</button>
+              </div>
+            </div>
+            <div id="overviewGeneratorGrid" class="overview-generator-grid"></div>
+          </section>
+
+          <section class="panel live-deck-card live-camera-card" data-live-panel-card="cameras">
+            <div class="panel-title">
+              <span>Cams</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#camerasSection" data-section-link="camerasSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="cameras">Hide</button>
+              </div>
+            </div>
+            <div id="overviewCameraGrid" class="overview-camera-grid"></div>
+          </section>
+
+          <section class="panel live-deck-card live-sequence-card" data-live-panel-card="sequences">
+            <div class="panel-title">
+              <span>Sequences</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#sequencerSection" data-section-link="sequencerSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="sequences">Hide</button>
+              </div>
+            </div>
+            <div id="overviewSequenceTransport" class="overview-sequence-transport"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="lightsSection" class="section-view">
+        <div class="lights-workspace">
+          <aside class="lights-subpane">
+            <section class="panel lights-looks-panel">
+              <div class="panel-title">
+                <span>Performance Looks</span>
+              </div>
+              <div id="presetButtons" class="button-grid preset-grid"></div>
+            </section>
+
+          </aside>
+
+          <div class="lights-mainpane">
+            <section class="panel global-light-controls">
+              <div class="panel-title">
+                <span>Current Output</span>
+              </div>
+              <div id="linkControls" class="link-controls"></div>
+            </section>
+            <section class="panel compact-bpm-panel">
+              <div class="panel-title">
+                <span>BPM Color Rotation</span>
+                <span class="mini-status" id="bpmStatus">Idle</span>
+              </div>
+              <div id="bpmClockSummary" class="bpm-clock-summary"></div>
+              <div id="bpmRotationControls" class="bpm-rotation-mount"></div>
+              <div class="bpm-row">
+                <label><span>BPM</span><input id="bpmInput" inputmode="decimal" value="125"></label>
+                <button type="button" id="bpmDown">-</button>
+                <input id="bpmSlider" class="bpm-slider" type="range" min="40" max="240" step="0.1" value="125" aria-label="BPM slider">
+                <button type="button" id="bpmUp">+</button>
+                <button type="button" id="bpmFollow">Follow Now Playing BPM</button>
+                <button type="button" id="bpmStart">Start</button>
+                <button type="button" id="bpmResync">Resync</button>
+                <button type="button" id="bpmStop">Stop</button>
+              </div>
+              <div id="divisionButtons" class="division-grid"></div>
+            </section>
+
+            <details class="panel light-helper-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Color helpers</summary>
+              <div class="panel-title">
+                <span>Color Relationships</span>
+              </div>
+              <div class="button-grid relationship-grid">
+                <button type="button" data-command="rotate_colors">Rotate Selected Colors</button>
+                <button type="button" data-relationship="complement">Make Complement</button>
+                <button type="button" data-relationship="analogous">Make Analogous</button>
+                <button type="button" data-relationship="triad">Make Triad</button>
+                <button type="button" data-relationship="split-a">Split Complement A</button>
+                <button type="button" data-relationship="split-b">Split Complement B</button>
+              </div>
+            </details>
+
+            <details class="panel artwork-workflow-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Artwork color matching</summary>
+              <div class="panel-title artwork-workflow-title">
+                <span>Artwork Color Match</span>
+                <div class="panel-actions">
+                  <button id="refreshButton" type="button">Refresh</button>
+                  <button id="extractPalette" type="button">Extract Artwork</button>
+                </div>
+              </div>
+              <div class="artwork-workspace">
+                <article class="artwork-panel">
+                  <div class="artwork-frame">
+                    <img id="artworkImage" alt="Current artwork preview">
+                    <div class="empty-state" id="artworkEmpty">No artwork file found yet</div>
+                  </div>
+                  <p class="muted artwork-path" id="artworkPath">Artwork path unavailable</p>
+                </article>
+
+                <article class="artwork-matcher-panel">
+                  <div class="artwork-option-row">
+                    <button id="keepPresetColorsToggle" type="button" class="small-toggle">Keep Preset Colors</button>
+                    <button id="autoArtworkToggle" type="button" class="small-toggle">Auto Artwork Colors</button>
+                  </div>
+                  <div class="neutral-color-row">
+                    <label class="inline-select neutral-select">
+                      <span>Neutral Color 1</span>
+                      <select id="neutralArtworkPrimary"></select>
+                    </label>
+                    <label class="inline-select neutral-select">
+                      <span>Neutral Color 2</span>
+                      <select id="neutralArtworkSecondary"></select>
+                    </label>
+                    <label class="inline-select neutral-select">
+                      <span>Neutral Color 3</span>
+                      <select id="neutralArtworkAccent"></select>
+                    </label>
+                  </div>
+                  <div id="palettePreview" class="palette-preview compact-palette"></div>
+                  <div class="button-grid artwork-buttons">
+                    <button id="applyPalette" type="button">Apply Palette</button>
+                    <button id="useCurrentColors" type="button">Save Current as Default</button>
+                  </div>
+                  <p class="muted" id="paletteStatus">Palette waits for current artwork.</p>
+                </article>
+              </div>
+            </details>
+
+            <details class="panel quick-settings-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Lighting automation</summary>
+              <div class="panel-title">
+                <span>Automation</span>
+                <button id="saveQuickSettings" type="button">Save</button>
+              </div>
+              <form id="quickSettingsForm" class="quick-settings-form"></form>
+              <p class="muted" id="quickSettingsStatus">Performance automation mirrors the app config.</p>
+            </details>
+
+            <details class="panel local-osc-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Lights OSC setup</summary>
+              <div class="panel-title">
+                <span>Lights OSC Settings</span>
+                <button id="saveLightsOsc" type="button">Save Lights OSC</button>
+              </div>
+              <form id="lightsOscForm" class="local-osc-form"></form>
+              <p class="muted" id="lightsOscStatus">Edit dashboard links and optional extra OSC sends here.</p>
+            </details>
+          </div>
+        </div>
+
+      </section>
+
+      <section id="visualsSection" class="section-view">
+        <section class="panel visual-control-panel">
+          <div class="panel-title">
+            <span>Visual OSC Controls</span>
+          </div>
+          <div id="visualCueRoute" class="cue-route-panel"></div>
+          <div id="visualOpacityControl" class="visual-slider-grid"></div>
+          <div id="visualNowPlayingOpacityControl" class="opacity-control now-playing-opacity-control"></div>
+          <div id="visualControls" class="visual-grid"></div>
+        </section>
+
+        <details class="panel tablet-setup-panel" data-tablet-collapse>
+          <summary>Visual workflow & routing</summary>
+          <div class="panel-title">
+            <span>Visual Workflow</span>
+          </div>
+          <div class="workflow-grid">
+            <div>
+              <strong>Open visual slots</strong>
+              <span>Assign Resolume columns, clips, layers, dashboard links, or effect toggles in Settings.</span>
+            </div>
+            <div>
+              <strong>Preset-linked visuals</strong>
+              <span>Use Linked Looks to pair a lighting preset with a visual slot and camera/scene choices.</span>
+            </div>
+            <div>
+              <strong>Tablet priority</strong>
+              <span>Large buttons, no modal hunting, and one-tap launch paths for live changes.</span>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel local-osc-panel tablet-setup-panel" data-tablet-collapse>
+          <summary>Visuals OSC setup</summary>
+          <div class="panel-title">
+            <span>Visuals OSC Settings</span>
+            <button id="saveVisualsOsc" type="button">Save Visuals OSC</button>
+          </div>
+          <form id="visualsOscForm" class="local-osc-form"></form>
+          <p class="muted" id="visualsOscStatus">Edit visual button labels and Resolume OSC addresses here.</p>
+        </details>
+      </section>
+
+      <section id="generatorSection" class="section-view">
+        <section class="panel generator-quick-presets-panel">
+          <div class="panel-title">
+            <span>Quick Generator Presets</span>
+            <span class="panel-hint">Immediate visual changes; deeper tuning stays below.</span>
+          </div>
+          <div id="generatorQuickPresetGrid" class="generator-quick-preset-grid"></div>
+        </section>
+
+        <div class="generator-workspace">
+          <div class="generator-column generator-left-column">
+            <section class="panel generator-preview-panel">
+              <div class="panel-title">
+                <span>Generator Preview</span>
+                <div class="panel-actions">
+                  <button id="openGenerativeVisualizer" type="button">Open Visualizer</button>
+                  <button id="freezeGenerativeVisual" type="button">Freeze</button>
+                  <button id="stopGenerativeVisual" type="button">Stop</button>
+                </div>
+              </div>
+              <iframe id="generatorPreviewFrame" class="generator-preview-frame" title="Generative visual preview" src="/visuals/generative?embed=1"></iframe>
+            </section>
+
+            <details class="panel generator-layer-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Fine tune generator layers</summary>
+              <div class="panel-title">
+                <span>Layer Stack</span>
+              </div>
+              <div id="generatorColorPreview" class="generator-color-preview"></div>
+              <div id="generatorLayerStack" class="generator-layer-stack"></div>
+              <p class="muted" id="generativeVisualStatus">Browser-rendered visuals follow Looks, BPM, and show state.</p>
+            </details>
+          </div>
+
+          <div class="generator-column generator-right-column">
+            <details class="panel generative-visual-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Tune generator parameters</summary>
+              <div class="panel-title">
+                <span>Generator Controls</span>
+              </div>
+              <div id="generativeVisualControls" class="generative-visual-controls"></div>
+            </details>
+
+            <details class="panel generator-sync-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Generator sync & automation</summary>
+              <div class="panel-title">
+                <span>Generator Sync</span>
+              </div>
+              <div id="generatorBpmSync" class="generator-bpm-sync"></div>
+            </details>
+          </div>
+
+          <details class="panel math-scene-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Browse math scenes</summary>
+            <div class="panel-title">
+              <span>Recommended Math Scenes</span>
+              <div id="mathSceneFilters" class="math-scene-filters"></div>
+            </div>
+            <div id="mathSceneGallery" class="math-scene-grid"></div>
+            <p class="muted" id="mathSceneStatus">Math scenes map musical intent to generator formulas and beat-aware controls.</p>
+          </details>
+
+          <details class="panel generator-preset-panel tablet-setup-panel" data-tablet-collapse>
+              <summary>Full generator preset library</summary>
+            <div class="panel-title">
+              <span>Preset Lab</span>
+            </div>
+            <div id="generatorPresetGallery" class="generator-preset-grid"></div>
+          </details>
+        </div>
+      </section>
+
+      <section id="camerasSection" class="section-view">
+        <section class="panel camera-control-panel">
+          <div class="panel-title">
+            <span>Camera / Scene OSC Controls</span>
+          </div>
+          <div id="cameraCueRoute" class="cue-route-panel"></div>
+          <div class="camera-layout">
+            <div>
+              <h3>Main Box Cams</h3>
+              <div id="mainBoxCams" class="camera-grid"></div>
+              <div id="mainBoxCamOpacityControl" class="opacity-control camera-opacity-control main-box-camera-opacity-control"></div>
+            </div>
+            <div>
+              <h3>PIP Box Cams</h3>
+              <div id="pipBoxCams" class="camera-grid"></div>
+              <div id="pipBoxCamOpacityControl" class="opacity-control camera-opacity-control pip-box-camera-opacity-control"></div>
+            </div>
+            <div>
+              <h3>Background Cams</h3>
+              <div id="backgroundCams" class="camera-grid"></div>
+              <div id="backgroundCamOpacityControl" class="opacity-control camera-opacity-control background-camera-opacity-control"></div>
+            </div>
+          </div>
+          <div class="scene-control-block">
+            <h3>Scene Controls</h3>
+            <div id="sceneControls" class="scene-grid"></div>
+          </div>
+        </section>
+
+        <details class="panel local-osc-panel tablet-setup-panel" data-tablet-collapse>
+          <summary>Camera OSC setup</summary>
+          <div class="panel-title">
+            <span>Camera OSC Settings</span>
+            <button id="saveCamerasOsc" type="button">Save Camera OSC</button>
+          </div>
+          <form id="camerasOscForm" class="local-osc-form"></form>
+          <p class="muted" id="camerasOscStatus">Edit camera, background, and scene OSC addresses here.</p>
+        </details>
+      </section>
+
+      <section id="looksSection" class="section-view">
+        <section class="panel look-launcher-panel">
+          <div class="panel-title">
+            <span>Launch a Look</span>
+            <div class="look-launcher-title-actions">
+              <button class="small-toggle look-lights-toggle" type="button" data-look-lights-toggle>Look Lights</button>
+              <span class="panel-hint">One tap stages linked cues. Global GO sends them live.</span>
+            </div>
+          </div>
+          <div id="lookLauncherGrid" class="look-launcher-grid"></div>
+        </section>
+
+        <details class="panel favorite-bank-editor tablet-setup-panel" data-tablet-collapse>
+          <summary>Song moments for this set</summary>
+          <div class="panel-title">
+            <span>Song Moment Staging</span>
+            <span class="panel-hint">Assign a whole look to Intro, Build, Drop, or Outro. Tapping that moment stages it; GO sends it.</span>
+          </div>
+          <div id="favoriteBankEditor" class="favorite-bank-editor-body"></div>
+        </details>
+
+        <details class="panel panic-safe-editor tablet-setup-panel" data-tablet-collapse>
+          <summary>Panic safe state</summary>
+          <div class="panel-title">
+            <span>Panic Safe</span>
+            <span class="panel-hint">Hold SAFE for one second to stop BPM / generator and recall this state.</span>
+          </div>
+          <div id="panicSafeEditor" class="panic-safe-editor-body"></div>
+        </details>
+
+        <details class="panel look-builder-panel tablet-setup-panel" data-tablet-collapse>
+          <summary>Build or edit a look</summary>
+          <div class="panel-title">
+            <span>Look Builder</span>
+            <div class="panel-actions">
+              <button id="saveCurrentLook" type="button">Save Look</button>
+              <button id="launchSelectedLook" type="button">Apply Look</button>
+            </div>
+          </div>
+          <div class="look-name-row">
+            <label class="field">
+              <span>Look Name</span>
+              <input id="lookBuilderName" type="text" placeholder="New look name">
+            </label>
+            <label class="inline-select save-look-select">
+              <span>Load Existing</span>
+            <select id="saveCurrentLookSelect"></select>
+            </label>
+          </div>
+          <div id="lookBuilderSummary" class="look-builder-summary"></div>
+          <form id="lookBuilderForm" class="look-builder-form"></form>
+          <p class="muted" id="saveLookStatus">Type a look name, choose cue links, then save or stage it. Global GO sends the staged look. A new name creates a new look.</p>
+        </details>
+
+        <details class="panel linked-look-panel tablet-setup-panel" data-tablet-collapse>
+          <summary>Edit look colors & cue routing</summary>
+          <div class="panel-title">
+            <span>Performance Looks: Lights + Cues</span>
+          </div>
+          <div id="presetLinks" class="preset-link-grid"></div>
+        </details>
+
+        <details class="panel advanced-look-panel">
+          <summary>Advanced Bulk Link Matrix</summary>
+          <div class="panel-title advanced-panel-title">
+            <span>Look Link Matrix</span>
+            <button id="saveLookLinks" type="button">Save Look Links</button>
+          </div>
+          <form id="lookLinkForm" class="look-link-form"></form>
+          <p class="muted" id="lookLinksStatus">Link each look to Now Playing, visuals, cameras, and scenes.</p>
+        </details>
+
+        <details class="panel advanced-look-panel">
+          <summary>Advanced Preset Editor</summary>
+          <div class="panel-title advanced-panel-title">
+            <span>Look Editor</span>
+            <button id="savePresets" type="button">Save Preset Group</button>
+          </div>
+          <div id="presetGroupTabs" class="subtabs"></div>
+          <div id="presetEditor" class="preset-editor"></div>
+          <p class="muted" id="presetStatus">Presets and linked-look routing save to the app config.</p>
+        </details>
+      </section>
+
+      <section id="sequencerSection" class="section-view">
+        <section class="panel show-sequencer-panel">
+          <div class="panel-title">
+            <span>Look Sequencer</span>
+            <div class="panel-actions">
+              <button id="saveShowSequence" type="button">Save Show</button>
+            </div>
+          </div>
+          <div id="sequenceTimingTools" class="sequence-timing-tools"></div>
+          <div class="show-sequence-name-row">
+            <label class="field">
+              <span>Show Name</span>
+              <input id="showSequenceName" type="text" value="Main Show">
+            </label>
+            <label class="inline-select">
+              <span>Load Show</span>
+              <select id="showSequenceSelect"></select>
+            </label>
+            <label class="quick-field quick-toggle show-loop-toggle">
+              <span>Loop Show</span>
+              <input id="showSequenceLoop" type="checkbox">
+            </label>
+          </div>
+          <div class="sequence-transport">
+            <button id="playShowSequence" type="button">Play Show</button>
+            <button id="pauseShowSequence" type="button">Pause</button>
+            <button id="nextShowSequenceStep" type="button">Next Step</button>
+            <button id="stopShowSequence" type="button">Stop</button>
+            <div>
+              <span>Transport</span>
+              <strong id="showSequenceTransport">Stopped</strong>
+            </div>
+          </div>
+          <details class="sequence-builder-panel tablet-setup-panel" data-tablet-collapse>
+            <summary>Edit timing & cue list</summary>
+            <div class="sequence-composer">
+            <aside class="sequence-look-bank">
+              <div class="sequence-composer-title">
+                <span>Cue Palette</span>
+                <strong id="sequenceBankHint">Looks append</strong>
+              </div>
+              <div id="sequenceBankFilters" class="sequence-bank-filters"></div>
+              <div id="sequenceLookBank" class="sequence-look-bank-list"></div>
+            </aside>
+            <section class="sequence-timeline-panel">
+              <div class="sequence-composer-title">
+                <span>Timeline</span>
+                <strong>Build the combo</strong>
+              </div>
+              <div class="sequence-timeline-ruler">
+                <span>Start</span>
+                <span>Next cue waits from the previous cue</span>
+                <span>Finish</span>
+              </div>
+              <div id="showSequenceRows" class="show-sequence-rows"></div>
+              <button id="addSequenceStep" class="sequence-add-step" type="button">Add Empty Cue</button>
+            </section>
+            </div>
+            <p class="muted" id="showSequenceStatus">Frame a sequence, then play it once or loop it while performing.</p>
+          </details>
+        </section>
+      </section>
+
+      <section id="nowPlayingSection" class="section-view">
+        <section class="panel now-playing-mode-panel">
+          <div class="panel-title">
+            <span>Now Playing Modes</span>
+          </div>
+          <div class="button-grid manual-buttons">
+            <button type="button" data-command="vinyl"><span id="vinylModeButtonText">Record Playing</span></button>
+            <button type="button" data-command="studio"><span id="studioModeButtonText">NO TALKING STUDIO</span></button>
+            <button type="button" data-command="videogame"><span id="videogameModeButtonText">Videogames</span></button>
+            <button type="button" data-command="resume">Resume CDJ</button>
+            <button type="button" data-command="safe_reset">Safe Reset</button>
+          </div>
+          <div id="nowPlayingOpacityControl" class="opacity-control now-playing-opacity-control"></div>
+          <form id="manualModeForm" class="manual-mode-form">
+            <label><span>Vinyl message</span><input id="vinylTrackText" name="vinyl_track_text" type="text" autocomplete="off"></label>
+            <label><span>Studio message</span><input id="studioTrackText" name="studio_track_text" type="text" autocomplete="off"></label>
+            <label><span>Videogames message</span><input id="videogameTrackText" name="videogame_track_text" type="text" autocomplete="off"></label>
+            <div class="manual-mode-actions">
+              <button id="saveManualModeText" type="button">Save Mode Text</button>
+              <button id="rebuildMusicIndex" type="button">Rebuild Music Index</button>
+            </div>
+          </form>
+          <p class="muted" id="manualModeStatus">CDJ uses BeatLink metadata and album artwork; Vinyl, Studio, and Videogames use their configured image and message.</p>
+        </section>
+
+        <section class="panel now-playing-live-summary">
+          <div class="panel-title">
+            <span>On Deck</span>
+            <span class="panel-hint" id="liveTrackMode">Waiting for source</span>
+          </div>
+          <div class="now-playing-live-grid">
+            <div class="now-playing-live-title"><span>Track</span><strong id="liveTrackNowPlaying">Waiting for watcher data</strong></div>
+            <div><span>Artist</span><strong id="liveTrackArtist">-</strong></div>
+            <div><span>BPM</span><strong id="liveTrackBpm">-</strong></div>
+            <div><span>Player</span><strong id="liveTrackPlayer">-</strong></div>
+          </div>
+        </section>
+
+        <section class="track-layout">
+        <section class="panel track-artwork-panel">
+          <div class="panel-title">
+            <span>Stream Artwork</span>
+          </div>
+          <div class="artwork-frame track-artwork-frame">
+            <img id="trackArtworkImage" alt="Detected track artwork preview">
+            <div class="empty-state" id="trackArtworkEmpty">No artwork file found yet</div>
+          </div>
+          <p class="muted" id="trackArtworkPath">Artwork path unavailable</p>
+        </section>
+
+        <details class="panel track-diagnostics-panel tablet-setup-panel" data-tablet-collapse><summary>Track details & diagnostics</summary>
+          <div class="panel-title">
+            <span>Stream Metadata</span>
+          </div>
+          <dl class="track-meta-grid">
+            <div><dt>Now Playing</dt><dd id="trackNowPlaying">Waiting for watcher data</dd></div>
+            <div><dt>Title</dt><dd id="trackTitle">-</dd></div>
+            <div><dt>Artist</dt><dd id="trackArtist">-</dd></div>
+            <div><dt>Album</dt><dd id="trackAlbum">-</dd></div>
+            <div><dt>BPM</dt><dd id="trackBpm">-</dd></div>
+            <div><dt>Player</dt><dd id="trackPlayer">-</dd></div>
+            <div><dt>Device</dt><dd id="trackDevice">-</dd></div>
+            <div><dt>Matched File</dt><dd id="trackMatchedFile">-</dd></div>
+            <div><dt>Track Comment Found</dt><dd id="trackCommentFound">-</dd></div>
+            <div><dt>Parsed Values</dt><dd id="trackParsedValues">-</dd></div>
+            <div><dt>Missing Color Values</dt><dd id="trackMissingValues">-</dd></div>
+            <div><dt>Applied From</dt><dd id="trackAppliedFrom">-</dd></div>
+            <div><dt>Auto Send</dt><dd id="trackAutoSend">-</dd></div>
+            <div><dt>Daily Log</dt><dd id="trackDailyLog">-</dd></div>
+          </dl>
+        </details>
+        </section>
+        <details class="panel tablet-setup-panel" data-tablet-collapse>
+          <summary>Color comment & defaults</summary>
+          <div class="panel-title">
+            <span>Color Comment for MP3</span>
+            <div class="panel-actions">
+              <button id="trackUseCurrentColors" type="button">Save Current Output as Default</button>
+              <button id="trackCopyColorComment" type="button">Copy</button>
+            </div>
+          </div>
+          <div class="comment-box" id="trackColorComment">-</div>
+        </details>
+
+        <details class="panel local-osc-panel tablet-setup-panel" data-tablet-collapse>
+          <summary>Now Playing OSC setup</summary>
+          <div class="panel-title">
+            <span>Now Playing OSC Settings</span>
+            <button id="saveNowPlayingOsc" type="button">Save Now Playing OSC</button>
+          </div>
+          <form id="nowPlayingOscForm" class="local-osc-form"></form>
+          <p class="muted" id="nowPlayingOscStatus">Edit stream text, BLT, and metadata OSC outputs here.</p>
+        </details>
+      </section>
+
+      <section id="settingsSection" class="section-view">
+        <button id="saveSettingsSticky" class="settings-sticky-save" type="button">Save Settings</button>
+        <section class="panel">
+          <div class="panel-title">
+            <span>Open From Another Device</span>
+          </div>
+          <div id="remoteUrls" class="remote-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <span>Connection / Show Machine</span>
+            <button id="saveSettings" type="button">Save Core Settings</button>
+          </div>
+          <form id="settingsForm" class="settings-form"></form>
+          <p class="muted" id="settingsStatus">Core server, folder, and default text settings load from the app config.</p>
+        </section>
+      </section>
+
+      <section id="logSection" class="section-view">
+        <section class="panel">
+          <div class="panel-title">
+            <span>Command Output</span>
+            <button id="clearLog" type="button">Clear Log</button>
+          </div>
+          <pre id="commandLog" class="command-log">Waiting for commands.</pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js?v=20260711-artpal1"></script>
+  </body>
+</html>
+

@@ -1,0 +1,103 @@
+{
+    "active_connection_profile":  "pc_server_tablet",
+    "app_bind_host":  "0.0.0.0",
+    "app_port":  8080,
+    "music_root":  "\\\\SHOW-PC\\Music",
+    "artwork_output":  "data/current_artwork.jpg",
+    "fallback_artwork_path":  "",
+    "vinyl_logo_path":  "assets/NO_TALKING_DOUGHNUT_LOGO_2.png",
+    "studio_artwork_path":  "assets/NO_TALKING_STUDIO.png",
+    "network_machines":  [
+                             {
+                                 "id":  "laptop",
+                                 "label":  "Laptop",
+                                 "host":  "127.0.0.1",
+                                 "addresses":  [
+                                                   "127.0.0.1",
+                                                   "192.168.1.217"
+                                               ]
+                             },
+                             {
+                                 "id":  "pc",
+                                 "label":  "Show PC",
+                                 "host":  "192.168.1.197",
+                                 "addresses":  [
+                                                   "192.168.1.197"
+                                               ]
+                             },
+                             {
+                                 "id":  "third",
+                                 "label":  "Third Machine",
+                                 "host":  "",
+                                 "addresses":  [
+
+                                               ]
+                             }
+                         ],
+    "network_routes":  {
+                           "beatlink_machine":  "pc",
+                           "beatlink_port":  17081,
+                           "resolume_machine":  "pc",
+                           "resolume_port":  7000
+                       },
+    "osc_targets":  [
+
+                    ],
+    "performance_presets":  {
+                                "Look 1":  {
+                                               "PRIMARY":  "indigo",
+                                               "SECONDARY":  "magenta",
+                                               "STROBE":  "purple"
+                                           },
+                                "Look 2":  {
+                                               "PRIMARY":  "amber",
+                                               "SECONDARY":  "pink",
+                                               "STROBE":  "orange"
+                                           },
+                                "Look 3":  {
+                                               "PRIMARY":  "cyan",
+                                               "SECONDARY":  "blue",
+                                               "STROBE":  "cyan"
+                                           },
+                                "Look 4":  {
+                                               "PRIMARY":  "red",
+                                               "SECONDARY":  "amber",
+                                               "STROBE":  "yellow"
+                                           },
+                                "Look 5":  {
+                                               "PRIMARY":  "blue",
+                                               "SECONDARY":  "indigo",
+                                               "STROBE":  "blue"
+                                           },
+                                "Look 6":  {
+                                               "PRIMARY":  "magenta",
+                                               "SECONDARY":  "cyan",
+                                               "STROBE":  "purple"
+                                           },
+                                "Look 7":  {
+                                               "PRIMARY":  "green",
+                                               "SECONDARY":  "teal",
+                                               "STROBE":  "lime"
+                                           },
+                                "Look 8":  {
+                                               "PRIMARY":  "violet",
+                                               "SECONDARY":  "purple",
+                                               "STROBE":  "fuchsia"
+                                           },
+                                "Look 9":  {
+                                               "PRIMARY":  "rose",
+                                               "SECONDARY":  "orange",
+                                               "STROBE":  "pink"
+                                           },
+                                "Look 10":  {
+                                                "PRIMARY":  "blue",
+                                                "SECONDARY":  "purple",
+                                                "STROBE":  "royal"
+                                            }
+                            },
+    "preset_links":  {
+
+                     },
+    "vinyl_track_text":  "Record Playing",
+    "studio_track_text":  "NO TALKING STUDIO"
+}
