@@ -64,7 +64,7 @@ Basic app requirements:
 
 Show-system requirements:
 
-- Beat Link Trigger if you want live CDJ / Pro DJ Link Now Playing data.
+- [Beat Link Trigger](https://github.com/Deep-Symmetry/beat-link-trigger) if you want live CDJ / Pro DJ Link Now Playing data.
 - Resolume if you want visuals, cameras, scenes, or text layers controlled by OSC.
 - Stable IP addresses or machine names for show devices.
 - A readable music folder if using artwork matching.
@@ -102,4 +102,5 @@ Machine-specific config, logs, generated data, and PID files stay local and are 
 `requirements.txt` is only for Python packages installed by `pip`.
 
 It does not list Beat Link Trigger, Resolume, CDJs, network gear, or firewall settings. Those are covered in `SYSTEM_REQUIREMENTS.md`.
+
 

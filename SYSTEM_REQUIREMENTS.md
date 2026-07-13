@@ -12,7 +12,7 @@ You need:
 - Python installed on that computer.
 - A browser on any device you want to control from.
 - All devices on the same network.
-- Beat Link Trigger if you want live CDJ track info.
+- [Beat Link Trigger](https://github.com/Deep-Symmetry/beat-link-trigger) if you want live CDJ track info.
 - Resolume if you want visuals, cameras, scenes, text, or opacity controlled by OSC.
 - A music folder the server computer can read if you want album-art matching.
 
@@ -52,7 +52,7 @@ Windows Firewall must allow Python on the private network so phones/tablets can 
 
 ## Beat Link Trigger
 
-Use Beat Link Trigger when you want NT Performance Hub to read live CDJ track information.
+Use [Beat Link Trigger](https://github.com/Deep-Symmetry/beat-link-trigger) when you want NT Performance Hub to read live CDJ track information.
 
 Default Beat Link Trigger address:
 
@@ -121,3 +121,4 @@ config/app_config.example.json
 8. Confirm Git state is clean enough for the performance PC.
 
 Warnings are normal if show hardware is disconnected. Errors are the things to fix before depending on the system live.
+
