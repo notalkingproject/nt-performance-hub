@@ -12,6 +12,8 @@ It helps control:
 - Album artwork colors.
 - Browser-based generative visuals.
 - Show sequences.
+- Optional OBS recording/streaming controls.
+- A starter Macros section for future OSC, hotkey, webhook, or script buttons.
 
 ## How The Show Setup Works
 
@@ -79,9 +81,17 @@ Show-system requirements:
 - Resolume if you want visuals, lights, cameras, scenes, or text layers controlled by OSC.
 - Stable IP addresses or machine names for show devices.
 - A readable music folder if using artwork matching.
+- OBS with WebSocket enabled if you want recording/streaming controls.
+- Spotify developer login setup later if you want Spotify Now Playing metadata/artwork.
 
 Read `SYSTEM_REQUIREMENTS.md` for the plain-English show setup checklist.
 
+
+## Optional Integrations
+
+OBS control uses OBS WebSocket on the show PC. Enable OBS WebSocket in OBS, then set the host, port, and password in Settings. The password is saved only in your local ignored config file.
+
+Spotify is scaffolded as a future Now Playing source. The plan is OAuth login, then use Spotify metadata/artwork for Now Playing and artwork-driven lights. Do not commit Spotify secrets or tokens to GitHub.
 ## GitHub Workflow
 
 On the laptop where you edit:

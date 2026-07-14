@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NT Performance Hub</title>
-    <link rel="stylesheet" href="/styles.css?v=20260711-artpal1">
+    <link rel="stylesheet" href="/styles.css?v=20260713-visual-layer-off-rows">
   </head>
   <body>
     <main class="app">
@@ -14,41 +14,16 @@
       </header>
 
       <nav class="tabs" aria-label="App sections">
-        <section class="panel performance-track-panel">
-          <div class="panel-title">
-            <span>Now Playing Metadata</span>
-          </div>
-          <div class="sidebar-mini-nav">
-            <button class="tab-button mini-tab-button" type="button" data-section="nowPlayingSection" data-step="01">Now Playing</button>
-          </div>
-          <div class="now-playing-preview-row">
-            <div class="mini-artwork-frame">
-              <img id="previewArtworkImage" alt="Current artwork thumbnail">
-              <div class="mini-empty-state" id="previewArtworkEmpty">Art</div>
-            </div>
-            <div class="now-playing-preview-copy">
-              <span>Current Display</span>
-              <strong id="perfTrackDisplay">Waiting for artwork</strong>
-            </div>
-          </div>
-          <dl class="performance-track-grid">
-            <div class="wide"><dt>Track</dt><dd id="perfTrackNowPlaying">Waiting for BeatLink watcher data</dd></div>
-            <div><dt>Artist</dt><dd id="perfTrackArtist">-</dd></div>
-            <div><dt>Album</dt><dd id="perfTrackAlbum">-</dd></div>
-            <div><dt>BPM</dt><dd id="perfTrackBpm">-</dd></div>
-            <div><dt>Player</dt><dd id="perfTrackPlayer">-</dd></div>
-            <div><dt>Mode</dt><dd id="perfTrackMode">-</dd></div>
-          </dl>
-        </section>
-
-        <button class="tab-button workflow-tab tablet-now-playing-tab" type="button" data-section="nowPlayingSection" data-step="01">Now Playing</button>
-        <button class="tab-button workflow-tab active" type="button" data-section="liveDeckSection" data-step="02">Live Deck</button>
+        <button class="tab-button workflow-tab active" type="button" data-section="liveDeckSection" data-step="01">Live Deck</button>
+        <button class="tab-button workflow-tab tablet-now-playing-tab" type="button" data-section="nowPlayingSection" data-step="02">Now Playing</button>
         <button class="tab-button workflow-tab" type="button" data-section="lightsSection" data-step="03">Lights</button>
         <button class="tab-button workflow-tab" type="button" data-section="visualsSection" data-step="04">Visuals</button>
         <button class="tab-button workflow-tab" type="button" data-section="camerasSection" data-step="05">Cams</button>
         <button class="tab-button workflow-tab" type="button" data-section="looksSection" data-step="06">Looks</button>
         <button class="tab-button workflow-tab" type="button" data-section="sequencerSection" data-step="07">Sequences</button>
-        <button class="tab-button tool-tab" type="button" data-section="generatorSection">Generator</button>
+        <button class="tab-button workflow-tab" type="button" data-section="obsSection" data-step="08">OBS</button>
+        <button class="tab-button workflow-tab" type="button" data-section="macrosSection" data-step="09">Macros</button>
+        <button class="tab-button workflow-tab" type="button" data-section="generatorSection" data-step="10">Generator</button>
         <button class="tab-button" type="button" data-section="settingsSection">Settings</button>
         <button class="tab-button" type="button" data-section="logSection">Log</button>
         <article class="panel show-status-panel">
@@ -88,23 +63,47 @@
 
       <section id="liveDeckSection" class="section-view active">
         <div class="live-deck-header">
-          <div>
-            <h2>Live Deck</h2>
-            <p id="liveDeckViewSummary" class="live-deck-summary">7 panels visible</p>
+          <div class="live-deck-heading">
+            <div>
+              <h2>Live Deck</h2>
+              <p id="liveDeckViewSummary" class="live-deck-summary">8 panels visible</p>
+            </div>
+            <a class="live-card-detail-link live-header-detail-link" href="#nowPlayingSection" data-section-link="nowPlayingSection">Now Details</a>
           </div>
+          <section class="panel live-deck-track-panel" aria-label="Now playing summary">
+            <div class="now-playing-preview-row">
+              <div class="mini-artwork-frame">
+                <img id="previewArtworkImage" alt="Current artwork thumbnail">
+                <div class="mini-empty-state" id="previewArtworkEmpty">Art</div>
+              </div>
+              <div class="now-playing-preview-copy">
+                <span>Current Display</span>
+                <strong id="perfTrackDisplay">Waiting for artwork</strong>
+              </div>
+            </div>
+            <dl class="performance-track-grid">
+              <div class="wide"><dt>Track</dt><dd id="perfTrackNowPlaying">Waiting for BeatLink watcher data</dd></div>
+              <div><dt>Artist</dt><dd id="perfTrackArtist">-</dd></div>
+              <div><dt>Album</dt><dd id="perfTrackAlbum">-</dd></div>
+              <div><dt>BPM</dt><dd id="perfTrackBpm">-</dd></div>
+              <div><dt>Player</dt><dd id="perfTrackPlayer">-</dd></div>
+              <div><dt>Mode</dt><dd id="perfTrackMode">-</dd></div>
+            </dl>
+          </section>
           <details class="live-deck-customize">
             <summary>Customize deck</summary>
             <div class="live-deck-controls">
               <div class="live-deck-control-group">
                 <span class="live-deck-control-label">Show / hide functions</span>
                 <div class="live-deck-visibility" role="group" aria-label="Show or hide Live Deck panels">
-                  <label><input type="checkbox" data-live-panel-toggle="looks" checked><span>Looks</span></label>
-                  <label><input type="checkbox" data-live-panel-toggle="lights" checked><span>Lights</span></label>
+                                    <label><input type="checkbox" data-live-panel-toggle="lights" checked><span>Lights</span></label>
                   <label><input type="checkbox" data-live-panel-toggle="visuals" checked><span>Visuals</span></label>
                   <label><input type="checkbox" data-live-panel-toggle="cameras" checked><span>Cams</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="looks" checked><span>Looks</span></label>
                   <label><input type="checkbox" data-live-panel-toggle="sequences" checked><span>Sequences</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="obs" checked><span>OBS</span></label>
+                  <label><input type="checkbox" data-live-panel-toggle="macros" checked><span>Macros</span></label>
                   <label><input type="checkbox" data-live-panel-toggle="generator" checked><span>Generator</span></label>
-                  <label><input type="checkbox" data-live-panel-toggle="now-playing" checked><span>Now</span></label>
                 </div>
               </div>
             </div>
@@ -137,19 +136,18 @@
 
 
         <div class="live-deck-grid">
-          <section class="panel live-deck-card live-look-card" data-live-panel-card="looks">
+          <section class="panel live-deck-card live-now-playing-card" data-live-panel-card="now-playing">
             <div class="panel-title">
-              <span>Looks</span>
+              <span>Now Playing</span>
               <div class="live-card-title-actions">
-                <a class="live-card-detail-link" href="#looksSection" data-section-link="looksSection">Details</a>
-                <button class="live-card-hide" type="button" data-live-panel-hide="looks">Hide</button>
+                <a class="live-card-detail-link" href="#nowPlayingSection" data-section-link="nowPlayingSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="now-playing">Hide</button>
               </div>
             </div>
-            <div id="overviewLookPreview" class="overview-look-preview"></div>
-            <div id="overviewLookGrid" class="overview-look-grid"></div>
+            <div id="overviewNowPlaying" class="overview-now-playing"></div>
           </section>
 
-          <section class="panel live-deck-card live-light-card" data-live-panel-card="lights">
+<section class="panel live-deck-card live-light-card" data-live-panel-card="lights">
             <div class="panel-title">
               <span>Lights</span>
               <div class="live-card-title-actions">
@@ -169,18 +167,7 @@
             <div id="overviewBpmControls" class="overview-bpm-controls"></div>
           </section>
 
-          <section class="panel live-deck-card live-now-playing-card" data-live-panel-card="now-playing">
-            <div class="panel-title">
-              <span>Now Playing</span>
-              <div class="live-card-title-actions">
-                <a class="live-card-detail-link" href="#nowPlayingSection" data-section-link="nowPlayingSection">Details</a>
-                <button class="live-card-hide" type="button" data-live-panel-hide="now-playing">Hide</button>
-              </div>
-            </div>
-            <div id="overviewNowPlaying" class="overview-now-playing"></div>
-          </section>
-
-          <section class="panel live-deck-card live-visual-card" data-live-panel-card="visuals">
+<section class="panel live-deck-card live-visual-card" data-live-panel-card="visuals">
             <div class="panel-title">
               <span>Visuals</span>
               <div class="live-card-title-actions">
@@ -191,18 +178,7 @@
             <div id="overviewVisualGrid" class="overview-button-grid"></div>
           </section>
 
-          <section class="panel live-deck-card live-generator-card" data-live-panel-card="generator">
-            <div class="panel-title">
-              <span>Generator</span>
-              <div class="live-card-title-actions">
-                <a class="live-card-detail-link" href="#generatorSection" data-section-link="generatorSection">Details</a>
-                <button class="live-card-hide" type="button" data-live-panel-hide="generator">Hide</button>
-              </div>
-            </div>
-            <div id="overviewGeneratorGrid" class="overview-generator-grid"></div>
-          </section>
-
-          <section class="panel live-deck-card live-camera-card" data-live-panel-card="cameras">
+<section class="panel live-deck-card live-camera-card" data-live-panel-card="cameras">
             <div class="panel-title">
               <span>Cams</span>
               <div class="live-card-title-actions">
@@ -213,7 +189,19 @@
             <div id="overviewCameraGrid" class="overview-camera-grid"></div>
           </section>
 
-          <section class="panel live-deck-card live-sequence-card" data-live-panel-card="sequences">
+<section class="panel live-deck-card live-look-card" data-live-panel-card="looks">
+            <div class="panel-title">
+              <span>Looks</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#looksSection" data-section-link="looksSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="looks">Hide</button>
+              </div>
+            </div>
+            <div id="overviewLookPreview" class="overview-look-preview"></div>
+            <div id="overviewLookGrid" class="overview-look-grid"></div>
+          </section>
+
+<section class="panel live-deck-card live-sequence-card" data-live-panel-card="sequences">
             <div class="panel-title">
               <span>Sequences</span>
               <div class="live-card-title-actions">
@@ -222,6 +210,39 @@
               </div>
             </div>
             <div id="overviewSequenceTransport" class="overview-sequence-transport"></div>
+          </section>
+
+<section class="panel live-deck-card live-obs-card" data-live-panel-card="obs">
+            <div class="panel-title">
+              <span>OBS</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#obsSection" data-section-link="obsSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="obs">Hide</button>
+              </div>
+            </div>
+            <div id="overviewObsControls" class="overview-obs-controls"></div>
+          </section>
+
+<section class="panel live-deck-card live-macro-card" data-live-panel-card="macros">
+            <div class="panel-title">
+              <span>Macros</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#macrosSection" data-section-link="macrosSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="macros">Hide</button>
+              </div>
+            </div>
+            <div id="overviewMacroButtons" class="overview-macro-buttons"></div>
+          </section>
+
+<section class="panel live-deck-card live-generator-card" data-live-panel-card="generator">
+            <div class="panel-title">
+              <span>Generator</span>
+              <div class="live-card-title-actions">
+                <a class="live-card-detail-link" href="#generatorSection" data-section-link="generatorSection">Details</a>
+                <button class="live-card-hide" type="button" data-live-panel-hide="generator">Hide</button>
+              </div>
+            </div>
+            <div id="overviewGeneratorGrid" class="overview-generator-grid"></div>
           </section>
         </div>
       </section>
@@ -334,6 +355,7 @@
                 <button id="saveQuickSettings" type="button">Save</button>
               </div>
               <form id="quickSettingsForm" class="quick-settings-form"></form>
+              <p class="muted automation-note">Look Lights lets performance looks change lighting. Auto Artwork Colors, below, can still take color control again when new artwork arrives.</p>
               <p class="muted" id="quickSettingsStatus">Performance automation mirrors the app config.</p>
             </details>
 
@@ -654,30 +676,94 @@
       </section>
 
       <section id="nowPlayingSection" class="section-view">
-        <section class="panel now-playing-mode-panel">
+        <section class="panel now-playing-source-panel">
           <div class="panel-title">
-            <span>Now Playing Modes</span>
+            <span>Now Playing Source</span>
+            <span class="panel-hint" id="nowPlayingSourceStatus">Live: CDJ</span>
           </div>
-          <div class="button-grid manual-buttons">
-            <button type="button" data-command="vinyl"><span id="vinylModeButtonText">Record Playing</span></button>
-            <button type="button" data-command="studio"><span id="studioModeButtonText">NO TALKING STUDIO</span></button>
-            <button type="button" data-command="videogame"><span id="videogameModeButtonText">Videogames</span></button>
-            <button type="button" data-command="resume">Resume CDJ</button>
-            <button type="button" data-command="safe_reset">Safe Reset</button>
-          </div>
-          <div id="nowPlayingOpacityControl" class="opacity-control now-playing-opacity-control"></div>
-          <form id="manualModeForm" class="manual-mode-form">
-            <label><span>Vinyl message</span><input id="vinylTrackText" name="vinyl_track_text" type="text" autocomplete="off"></label>
-            <label><span>Studio message</span><input id="studioTrackText" name="studio_track_text" type="text" autocomplete="off"></label>
-            <label><span>Videogames message</span><input id="videogameTrackText" name="videogame_track_text" type="text" autocomplete="off"></label>
-            <div class="manual-mode-actions">
-              <button id="saveManualModeText" type="button">Save Mode Text</button>
-              <button id="rebuildMusicIndex" type="button">Rebuild Music Index</button>
+          <div class="now-playing-command-box">
+            <div class="source-block-title"><span>Live Triggers</span><strong>Now Playing output</strong></div>
+            <div class="button-grid manual-buttons now-playing-action-grid">
+            <button type="button" data-command="resume" data-now-playing-action-source="beatlink">BeatLink / CDJ</button>
+            <button type="button" data-command="spotify" data-now-playing-action-source="spotify">Spotify</button>
+            <button type="button" data-command="vinyl" data-now-playing-action-source="manual"><span id="vinylModeButtonText">Record Playing</span></button>
+            <button type="button" data-command="studio" data-now-playing-action-source="manual"><span id="studioModeButtonText">NO TALKING STUDIO</span></button>
+            <button type="button" data-command="videogame" data-now-playing-action-source="manual"><span id="videogameModeButtonText">Videogames</span></button>
+            <button type="button" data-command="safe_reset" data-now-playing-action-source="beatlink">Safe Reset</button>
             </div>
-          </form>
-          <p class="muted" id="manualModeStatus">CDJ uses BeatLink metadata and album artwork; Vinyl, Studio, and Videogames use their configured image and message.</p>
+          </div>
+          <div class="now-playing-edit-box">
+            <div class="source-block-title"><span>Edit Settings</span><strong id="nowPlayingSettingsLabel">Source Settings</strong></div>
+            <div id="nowPlayingSourceTabs" class="now-playing-source-tabs">
+            <button type="button" data-now-playing-source="beatlink">BeatLink Settings</button>
+            <button type="button" data-now-playing-source="spotify">Spotify Settings</button>
+            <button type="button" data-now-playing-source="manual">Manual Settings</button>
+          </div>
+          <div class="now-playing-source-panels">
+            <div class="now-playing-source-panel-body" data-now-playing-panel="beatlink">
+              <div id="nowPlayingOpacityControl" class="opacity-control now-playing-opacity-control"></div>
+              <form id="beatlinkSourceForm" class="source-settings-form">
+                <label><span>BeatLink Trigger URL</span><input id="beatlinkParamsUrl" name="blt_params_url" type="text" autocomplete="off"></label>
+                <label><span>Music Root</span><input id="musicRoot" name="music_root" type="text" autocomplete="off"></label>
+                <label><span>Current Artwork Output</span><input id="artworkOutputPath" name="artwork_output" type="text" autocomplete="off"></label>
+                <label><span>Fallback Artwork</span><input id="fallbackArtworkPath" name="fallback_artwork_path" type="text" autocomplete="off"></label>
+                <label><span>Default Fallback Template</span><input id="defaultFallbackTemplate" name="default_fallback_template" type="text" autocomplete="off"></label>
+                <label><span>CDJ artwork width</span><input id="cdjArtworkWidth" name="cdj_artwork_width" type="number" min="1" autocomplete="off"></label>
+                <label><span>CDJ artwork height</span><input id="cdjArtworkHeight" name="cdj_artwork_height" type="number" min="1" autocomplete="off"></label>
+                <label><span>Fallback width</span><input id="fallbackArtworkWidth" name="fallback_artwork_width" type="number" min="1" autocomplete="off"></label>
+                <label><span>Fallback height</span><input id="fallbackArtworkHeight" name="fallback_artwork_height" type="number" min="1" autocomplete="off"></label>
+              </form>
+              <div class="source-action-row source-action-row-index">
+                <button id="rebuildMusicIndex" type="button">Rebuild Music Index</button>
+                <span>Scans Music Root, refreshes the MP3 match list, then retries artwork for the current CDJ track.</span>
+              </div>
+              <p class="muted" id="beatlinkSourceStatus">CDJ mode uses BeatLink metadata and album artwork from the configured music library.</p>
+            </div>
+            <div class="now-playing-source-panel-body" data-now-playing-panel="spotify">
+              <form id="spotifySourceForm" class="source-settings-form spotify-source-form">
+                <label class="source-check"><input id="spotifyEnabled" name="spotify_enabled" type="checkbox"><span>Enable Spotify Now Playing</span></label>
+                <label><span>Fallback Display Text</span><input id="spotifyTrackText" name="spotify_track_text" type="text" autocomplete="off"></label>
+                <label><span>Static Artwork</span><input id="spotifyArtworkPath" name="spotify_artwork_path" type="text" autocomplete="off"></label>
+                <label><span>Spotify width</span><input id="spotifyArtworkWidth" name="spotify_artwork_width" type="number" min="1" autocomplete="off"></label>
+                <label><span>Spotify height</span><input id="spotifyArtworkHeight" name="spotify_artwork_height" type="number" min="1" autocomplete="off"></label>
+                <label><span>Client ID</span><input id="spotifyClientId" name="spotify_client_id" type="text" autocomplete="off"></label>
+                <label><span>Redirect URI</span><input id="spotifyRedirectUri" name="spotify_redirect_uri" type="text" autocomplete="off"></label>
+                <label><span>Market</span><input id="spotifyMarket" name="spotify_market" type="text" autocomplete="off"></label>
+              </form>
+              <p class="muted" id="spotifyAuthStatus">Spotify will stay local: client IDs and future tokens are stored in config files ignored by Git.</p>
+            </div>
+            <div class="now-playing-source-panel-body" data-now-playing-panel="manual">
+              <form id="manualModeForm" class="manual-mode-form manual-mode-groups">
+                <fieldset class="manual-mode-group">
+                  <legend>Vinyl</legend>
+                  <label><span>Message</span><input id="vinylTrackText" name="vinyl_track_text" type="text" autocomplete="off"></label>
+                  <label><span>Artwork</span><input id="vinylArtworkPath" name="vinyl_logo_path" type="text" autocomplete="off"></label>
+                  <label><span>Width</span><input id="vinylArtworkWidth" name="vinyl_artwork_width" type="number" min="1" autocomplete="off"></label>
+                  <label><span>Height</span><input id="vinylArtworkHeight" name="vinyl_artwork_height" type="number" min="1" autocomplete="off"></label>
+                </fieldset>
+                <fieldset class="manual-mode-group">
+                  <legend>Studio</legend>
+                  <label><span>Message</span><input id="studioTrackText" name="studio_track_text" type="text" autocomplete="off"></label>
+                  <label><span>Artwork</span><input id="studioArtworkPath" name="studio_artwork_path" type="text" autocomplete="off"></label>
+                  <label><span>Width</span><input id="studioArtworkWidth" name="studio_artwork_width" type="number" min="1" autocomplete="off"></label>
+                  <label><span>Height</span><input id="studioArtworkHeight" name="studio_artwork_height" type="number" min="1" autocomplete="off"></label>
+                </fieldset>
+                <fieldset class="manual-mode-group">
+                  <legend>Videogames</legend>
+                  <label><span>Message</span><input id="videogameTrackText" name="videogame_track_text" type="text" autocomplete="off"></label>
+                  <label><span>Artwork</span><input id="videogameArtworkPath" name="videogame_artwork_path" type="text" autocomplete="off"></label>
+                  <label><span>Width</span><input id="videogameArtworkWidth" name="videogame_artwork_width" type="number" min="1" autocomplete="off"></label>
+                  <label><span>Height</span><input id="videogameArtworkHeight" name="videogame_artwork_height" type="number" min="1" autocomplete="off"></label>
+                </fieldset>
+              </form>
+              <p class="muted" id="manualModeStatus">Manual modes use their configured image and message.</p>
+            </div>
+          </div>
+          <div class="source-save-row">
+            <button id="saveManualModeText" type="button">Save Now Playing Source Settings</button>
+          </div>
+          </div>
         </section>
-
         <section class="panel now-playing-live-summary">
           <div class="panel-title">
             <span>On Deck</span>
@@ -748,8 +834,64 @@
         </details>
       </section>
 
+
+
+      <section id="obsSection" class="section-view">
+        <section class="panel obs-control-panel">
+          <div class="panel-title">
+            <span>OBS Control</span>
+            <span class="panel-hint">Function 08</span>
+          </div>
+          <div id="obsSectionControls" class="overview-obs-controls obs-section-controls"></div>
+        </section>
+        <section class="panel obs-setup-panel">
+          <div class="panel-title">
+            <span>OBS Setup</span>
+            <button id="saveObsSettings" type="button">Save OBS Settings</button>
+          </div>
+          <form id="obsSettingsForm" class="settings-form obs-settings-form"></form>
+          <p class="muted" id="obsSettingsStatus">Enable OBS WebSocket in OBS, then save host, port, and password here. The default OBS WebSocket port is 4455.</p>
+        </section>
+      </section>
+
+      <section id="macrosSection" class="section-view">
+        <section class="panel macros-wireframe-panel">
+          <div class="panel-title">
+            <span>Macro Buttons</span>
+            <span class="panel-hint">Function 09</span>
+          </div>
+          <div class="macro-wireframe-grid">
+            <button type="button" disabled>OSC Macro</button>
+            <button type="button" disabled>Hotkey Macro</button>
+            <button type="button" disabled>Webhook Macro</button>
+            <button type="button" disabled>Script Macro</button>
+          </div>
+          <p class="muted">This section is ready for configurable buttons. Next pass can let each macro send OSC, a local hotkey, a webhook, or a local script.</p>
+        </section>
+      </section>
       <section id="settingsSection" class="section-view">
         <button id="saveSettingsSticky" class="settings-sticky-save" type="button">Save Settings</button>
+        <section class="panel osc-backup-panel">
+          <div class="panel-title">
+            <span>OSC Backup / Restore</span>
+            <div class="panel-actions">
+              <button id="downloadOscSettings" type="button">Download JSON</button>
+              <button id="exportOscSettings" type="button">Save to Project</button>
+              <label class="file-button" for="importOscSettings">
+                Import Upload
+                <input id="importOscSettings" type="file" accept="application/json,.json">
+              </label>
+            </div>
+          </div>
+          <div class="osc-backup-grid">
+            <label><span>Project backup filename</span><input id="oscBackupFileName" type="text" autocomplete="off"></label>
+            <label><span>Import project filename</span><input id="oscImportFileName" type="text" list="oscBackupFileList" autocomplete="off"></label>
+            <button id="importProjectOscSettings" type="button">Import Project JSON</button>
+          </div>
+          <datalist id="oscBackupFileList"></datalist>
+          <p class="muted" id="oscBackupStatus">Backs up OSC targets, Lights, Now Playing, Visuals, Cameras, look links, and sequences to data/osc_backups.</p>
+        </section>
+
         <section class="panel">
           <div class="panel-title">
             <span>Open From Another Device</span>
@@ -778,7 +920,6 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260711-artpal1"></script>
+    <script src="/app.js?v=20260713-visual-layer-off-rows"></script>
   </body>
 </html>
-

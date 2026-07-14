@@ -3,3 +3,4 @@
 # Show software and network dependencies are documented in SYSTEM_REQUIREMENTS.md.
 mutagen>=1.47.0
 Pillow>=10.0.0
+websocket-client>=1.8.0

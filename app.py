@@ -45,18 +45,22 @@ LEGACY_CONFIG_GLOB = "performance_lighting_gui*_config.json"
 INDEX_PATH = DATA_DIR / "music_library_index.json"
 LEGACY_INDEX_PATH = PROJECT_ROOT / "music_library_index.json"
 DEFAULT_ARTWORK_OUTPUT = DATA_DIR / "current_artwork.jpg"
+OSC_BACKUP_DIR = DATA_DIR / "osc_backups"
 DEFAULT_OUTPUT_PIXELS = 1024
 ARTWORK_SIZE_MIN = 64
 ARTWORK_SIZE_MAX = 4096
-ARTWORK_SIZE_SOURCES = ("cdj", "fallback", "vinyl", "studio", "videogame")
+ARTWORK_SIZE_SOURCES = ("cdj", "fallback", "vinyl", "studio", "videogame", "spotify")
 DEFAULT_VINYL_LOGO_PATH = str(ASSETS_DIR / "NO_TALKING_DOUGHNUT_LOGO_2.png")
 DEFAULT_VINYL_TRACK_TEXT = "Record Playing"
 DEFAULT_STUDIO_ARTWORK_PATH = str(ASSETS_DIR / "NO_TALKING_STUDIO.png")
 DEFAULT_STUDIO_TRACK_TEXT = "NO TALKING STUDIO"
 DEFAULT_VIDEOGAME_ARTWORK_PATH = str(ASSETS_DIR / "NO_TALKING_DOUGHNUT_LOGO_2.png")
 DEFAULT_VIDEOGAME_TRACK_TEXT = "Ravenswatch"
+DEFAULT_SPOTIFY_ARTWORK_PATH = str(ASSETS_DIR / "NO_TALKING_DOUGHNUT_LOGO_2.png")
+DEFAULT_SPOTIFY_TRACK_TEXT = "Spotify Now Playing"
 BLT_SOURCE_TIMEOUT_SECONDS = 0.45
 BLT_POLL_TIMEOUT_SECONDS = 0.9
+OBS_REQUEST_TIMEOUT_SECONDS = 2.5
 STATIC_ASSET_CACHE_SECONDS = 120
 SERVER_START_TIME = time.time()
 DEFAULT_TEMPLATE = (
@@ -66,63 +70,81 @@ DEFAULT_TEMPLATE = (
 )
 COLOR_HUE_VALUES = {
     "red": 0 / 360,
-    "scarlet": 15 / 360,
-    "orange": 30 / 360,
-    "amber": 45 / 360,
+    "vermilion": 12 / 360,
+    "scarlet": 24 / 360,
+    "orange": 36 / 360,
+    "amber": 48 / 360,
     "yellow": 60 / 360,
-    "chartreuse": 75 / 360,
-    "lime": 90 / 360,
-    "spring": 105 / 360,
+    "chartreuse": 72 / 360,
+    "acid": 84 / 360,
+    "lime": 96 / 360,
+    "spring": 108 / 360,
     "green": 120 / 360,
-    "emerald": 135 / 360,
-    "mint": 150 / 360,
-    "teal": 165 / 360,
+    "emerald": 132 / 360,
+    "jade": 144 / 360,
+    "mint": 156 / 360,
+    "teal": 168 / 360,
     "cyan": 180 / 360,
-    "sky": 195 / 360,
-    "azure": 210 / 360,
-    "royal": 225 / 360,
+    "aqua": 192 / 360,
+    "sky": 204 / 360,
+    "azure": 216 / 360,
+    "royal": 228 / 360,
     "blue": 240 / 360,
-    "indigo": 255 / 360,
-    "violet": 270 / 360,
-    "purple": 285 / 360,
+    "ultramarine": 252 / 360,
+    "indigo": 264 / 360,
+    "violet": 276 / 360,
+    "purple": 288 / 360,
     "magenta": 300 / 360,
-    "fuchsia": 315 / 360,
-    "pink": 330 / 360,
-    "rose": 345 / 360,
+    "fuchsia": 312 / 360,
+    "hot_pink": 324 / 360,
+    "pink": 336 / 360,
+    "rose": 348 / 360,
 }
 COLOR_HEX = {
     "red": "#ff0000",
-    "scarlet": "#ff4000",
-    "orange": "#ff8000",
-    "amber": "#ffbf00",
+    "vermilion": "#ff3300",
+    "scarlet": "#ff6600",
+    "orange": "#ff9900",
+    "amber": "#ffcc00",
     "yellow": "#ffff00",
-    "chartreuse": "#bfff00",
-    "lime": "#80ff00",
-    "spring": "#40ff00",
+    "chartreuse": "#ccff00",
+    "acid": "#99ff00",
+    "lime": "#66ff00",
+    "spring": "#33ff00",
     "green": "#00ff00",
-    "emerald": "#00ff40",
-    "mint": "#00ff80",
-    "teal": "#00ffbf",
+    "emerald": "#00ff33",
+    "jade": "#00ff66",
+    "mint": "#00ff99",
+    "teal": "#00ffcc",
     "cyan": "#00ffff",
-    "sky": "#00bfff",
-    "azure": "#0080ff",
-    "royal": "#0040ff",
+    "aqua": "#00ccff",
+    "sky": "#0099ff",
+    "azure": "#0066ff",
+    "royal": "#0033ff",
     "blue": "#0000ff",
-    "indigo": "#4000ff",
-    "violet": "#8000ff",
-    "purple": "#bf00ff",
+    "ultramarine": "#3300ff",
+    "indigo": "#6600ff",
+    "violet": "#9900ff",
+    "purple": "#cc00ff",
     "magenta": "#ff00ff",
-    "fuchsia": "#ff00bf",
-    "pink": "#ff0080",
-    "rose": "#ff0040",
+    "fuchsia": "#ff00cc",
+    "hot_pink": "#ff0099",
+    "pink": "#ff0066",
+    "rose": "#ff0033",
 }
 ARTWORK_MIN_SATURATION = 0.22
 ARTWORK_MIN_USABLE_VALUE = 0.24
 ARTWORK_MIN_BRIGHT_VALUE = 0.36
 ARTWORK_MIN_COLORFUL_RATIO = 0.08
 ARTWORK_MIN_BRIGHT_RATIO = 0.045
+ARTWORK_MIN_ACCENT_RATIO = 0.012
 ARTWORK_PRIMARY_HUE_SEPARATION = 0.075
 ARTWORK_ACCENT_HUE_SEPARATION = 0.045
+ARTWORK_SINGLE_HUE_FAMILY_DISTANCE = 0.19
+ARTWORK_CATEGORY_MIN_ROLE_RATIO = 0.045
+ARTWORK_CATEGORY_CLOSE_TIE_RATIO = 0.72
+ARTWORK_HARMONY_SECONDARY_OFFSETS = (1 / 8, -1 / 8, 1 / 6, -1 / 6)
+ARTWORK_HARMONY_ACCENT_OFFSETS = (1 / 2, 5 / 12, 7 / 12)
 GEN_VISUAL_PRESET_DEFS = {
     "lissajous_orbit": {
         "name": "Lissajous Orbit",
@@ -425,6 +447,7 @@ GEN_VISUAL_PRESET_RECIPES = {
     "orbital_dust": {"scale": 0.68, "zoom": 0.58, "rotation": 0.62, "symmetry": 0.55, "warp": 0.5, "line_width": 0.2, "trail": 0.86, "automation_target": "rotation", "automation_division": "8 bars", "automation_depth": 0.2, "automation_offset": 0.62},
 }
 SORTED_COLOR_NAMES = [name for name, _value in sorted(COLOR_HUE_VALUES.items(), key=lambda item: (item[1], item[0]))]
+COLOR_HUE_DEGREES = {name: int(round(value * 360)) % 360 for name, value in COLOR_HUE_VALUES.items()}
 PERCENT_CHOICES = [0, 10, 25, 50, 75, 90, 95, 100]
 PRESET_GROUP_KEYS = {
     "performance": "performance_presets",
@@ -895,6 +918,35 @@ def visual_clip_label(index: int) -> str:
     return f"L{layer} C{clip}"
 
 
+def visual_off_id(layer: int) -> str:
+    return f"visual_l{layer}_off"
+
+
+def visual_off_name(layer: int) -> str:
+    return f"Layer {layer} Clips Off"
+
+
+def visual_off_label(layer: int) -> str:
+    return f"L{layer} X"
+
+
+def visual_item_layer(item: dict[str, Any]) -> int:
+    try:
+        return max(0, int(item.get("layer", 0) or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def visual_item_is_off(item: dict[str, Any]) -> bool:
+    if text_value(item.get("kind", "")).casefold() == "off":
+        return True
+    try:
+        clip = item.get("clip", 1)
+        return int(clip if clip != "" else 1) == 0
+    except (TypeError, ValueError):
+        return False
+
+
 def is_default_visual_label(value: Any, index: int, item_id: str = "") -> bool:
     text = text_value(value)
     if not text:
@@ -912,18 +964,32 @@ def is_default_visual_label(value: Any, index: int, item_id: str = "") -> bool:
 
 
 def default_visual_controls() -> list[dict[str, Any]]:
-    return [
-        {
-            "id": f"visual_{index}",
-            "index": index,
-            "layer": visual_layer_clip(index)[0],
-            "clip": visual_layer_clip(index)[1],
-            "name": visual_clip_name(index),
-            "label": visual_clip_label(index),
+    controls: list[dict[str, Any]] = []
+    for layer in range(1, VISUAL_LAYER_COUNT + 1):
+        controls.append({
+            "id": visual_off_id(layer),
+            "index": 0,
+            "layer": layer,
+            "clip": 0,
+            "kind": "off",
+            "name": visual_off_name(layer),
+            "label": visual_off_label(layer),
             "address": "",
-        }
-        for index in range(1, VISUAL_BUTTON_COUNT + 1)
-    ]
+        })
+        start = ((layer - 1) * VISUAL_CLIPS_PER_LAYER) + 1
+        end = start + VISUAL_CLIPS_PER_LAYER
+        for index in range(start, end):
+            controls.append({
+                "id": f"visual_{index}",
+                "index": index,
+                "layer": visual_layer_clip(index)[0],
+                "clip": visual_layer_clip(index)[1],
+                "kind": "clip",
+                "name": visual_clip_name(index),
+                "label": visual_clip_label(index),
+                "address": "",
+            })
+    return controls
 
 
 def default_visual_slider_controls(config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -999,8 +1065,15 @@ def normalize_visual_controls(raw: Any) -> list[dict[str, Any]]:
         item_index = int(item.get("index", 1) or 1)
         override_name = override.get("name", item["name"])
         override_label = override.get("label", item["label"])
-        merged["name"] = item["name"] if is_default_visual_label(override_name, item_index, item_id) else text_value(override_name)
-        merged["label"] = item["label"] if is_default_visual_label(override_label, item_index, item_id) else text_value(override_label)
+        if visual_item_is_off(item):
+            merged["name"] = text_value(override_name) or item["name"]
+            merged["label"] = text_value(override_label) or item["label"]
+        else:
+            merged["name"] = item["name"] if is_default_visual_label(override_name, item_index, item_id) else text_value(override_name)
+            merged["label"] = item["label"] if is_default_visual_label(override_label, item_index, item_id) else text_value(override_label)
+        merged["kind"] = text_value(item.get("kind", "clip")) or "clip"
+        merged["layer"] = visual_item_layer(item)
+        merged["clip"] = int(item.get("clip", 1) or 0)
         merged["address"] = clean_osc_address(override.get("address", item.get("address", "")))
         normalized.append(merged)
     return normalized
@@ -1218,7 +1291,7 @@ def normalize_preset_links(raw: Any, preset_names: list[str]) -> dict[str, dict[
         if not isinstance(item, dict):
             item = {}
         now_playing_mode = text_value(item.get("now_playing_mode", item.get("mode", ""))).casefold()
-        if now_playing_mode not in {"", "cdj", "vinyl", "studio", "videogame"}:
+        if now_playing_mode not in {"", "cdj", "vinyl", "studio", "videogame", "spotify"}:
             now_playing_mode = ""
         generative_visual = item.get("generative_visual", {})
         if not isinstance(generative_visual, dict):
@@ -1682,6 +1755,109 @@ def save_config(config: dict[str, Any]) -> None:
     temp_path.replace(CONFIG_PATH)
 
 
+BPM_TIMING_OSC_ADDRESS_KEYS = (
+    "bpm_osc_bpm_address",
+    "bpm_osc_start_address",
+    "bpm_osc_resync_address",
+    "bpm_osc_stop_address",
+)
+
+
+OSC_BACKUP_KEYS = (
+    "resolume_host",
+    "resolume_port",
+    "beatlink_host",
+    "beatlink_port",
+    "beatlink_base_url",
+    "blt_params_url",
+    "network_routes",
+    "osc_targets",
+    "link_labels",
+    "osc_addresses",
+    "osc_extra_addresses",
+    "osc_output_notes",
+    "blt_osc_outputs",
+    "now_playing_opacity_address",
+    "visual_controls",
+    "visual_slider_controls",
+    "visual_opacity_address",
+    "camera_controls",
+    "camera_opacity_addresses",
+    "camera_opacity_labels",
+    "preset_links",
+    "show_sequences",
+    "look_apply_lights",
+    *BPM_TIMING_OSC_ADDRESS_KEYS,
+)
+
+
+def default_osc_backup_filename() -> str:
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return f"nt-performance-hub-osc-settings-{stamp}.json"
+
+
+def sanitize_osc_backup_filename(value: Any) -> str:
+    name = Path(str(value or "").strip()).name or default_osc_backup_filename()
+    name = re.sub(r"[^A-Za-z0-9._ -]+", "-", name).strip(" .")
+    if not name:
+        name = default_osc_backup_filename()
+    if not name.casefold().endswith(".json"):
+        name = f"{name}.json"
+    return name
+
+
+def osc_backup_path(value: Any) -> Path:
+    OSC_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    path = (OSC_BACKUP_DIR / sanitize_osc_backup_filename(value)).resolve()
+    root = OSC_BACKUP_DIR.resolve()
+    if path.parent != root:
+        raise ValueError("OSC backup filename must stay inside the project backup folder.")
+    return path
+
+
+def list_osc_backups() -> list[dict[str, Any]]:
+    if not OSC_BACKUP_DIR.exists():
+        return []
+    files = []
+    for path in sorted(OSC_BACKUP_DIR.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        files.append({
+            "filename": path.name,
+            "path": str(path),
+            "relative_path": str(path.relative_to(PROJECT_ROOT)),
+            "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
+            "size": stat.st_size,
+        })
+    return files
+
+
+def collect_osc_backup_settings(source: dict[str, Any]) -> dict[str, Any]:
+    return {key: source[key] for key in OSC_BACKUP_KEYS if key in source}
+
+
+def normalize_osc_backup_import(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise ValueError("OSC backup JSON must be an object.")
+    source = raw.get("settings") if isinstance(raw.get("settings"), dict) else raw.get("config") if isinstance(raw.get("config"), dict) else raw
+    settings = collect_osc_backup_settings(source)
+    if not settings:
+        raise ValueError("No known OSC settings were found in that file.")
+    return settings
+
+
+def build_osc_backup_payload(settings: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "app": "NT Performance Hub",
+        "type": "osc-settings-backup",
+        "version": 1,
+        "exported_at": datetime.now().isoformat(timespec="seconds"),
+        "settings": settings,
+    }
+
+
 def bool_from_payload(value: Any, default: bool = False) -> bool:
     if isinstance(value, bool):
         return value
@@ -1918,25 +2094,37 @@ def normalize_network_host(raw: Any) -> str:
     return value.strip()
 
 
-def normalize_machine_addresses(item: Any, fallback_host: Any = "") -> list[str]:
-    raw_values: list[Any] = []
+def normalize_machine_address_slots(item: Any, fallback_host: Any = "") -> dict[str, str]:
+    slots = {"main": "", "wifi": "", "ethernet": ""}
     if isinstance(item, dict):
-        raw_values.append(item.get("host", ""))
-        raw_addresses = item.get("addresses", [])
-        if isinstance(raw_addresses, str):
-            raw_values.extend(re.split(r"[,;\n]+", raw_addresses))
-        elif isinstance(raw_addresses, list):
-            raw_values.extend(raw_addresses)
-        for key in ("wifi_host", "wifi_ip", "wifi", "ethernet_host", "ethernet_ip", "ethernet", "lan_host", "lan_ip"):
-            raw_values.append(item.get(key, ""))
+        raw_slots = item.get("address_slots", {})
+        has_named_slots = isinstance(raw_slots, dict) and any(key in raw_slots for key in ("main", "host", "wifi", "wifi_host", "ethernet", "ethernet_host"))
+        if has_named_slots:
+            slots["main"] = normalize_network_host(raw_slots.get("main", raw_slots.get("host", "")))
+            slots["wifi"] = normalize_network_host(raw_slots.get("wifi", raw_slots.get("wifi_host", "")))
+            slots["ethernet"] = normalize_network_host(raw_slots.get("ethernet", raw_slots.get("ethernet_host", "")))
+        else:
+            raw_addresses = item.get("addresses", [])
+            address_values: list[Any] = []
+            if isinstance(raw_addresses, str):
+                address_values.extend(re.split(r"[,;\n]+", raw_addresses))
+            elif isinstance(raw_addresses, list):
+                address_values.extend(raw_addresses)
+            slots["main"] = normalize_network_host(item.get("host", item.get("main_host", item.get("main", address_values[0] if len(address_values) > 0 else ""))))
+            slots["wifi"] = normalize_network_host(item.get("wifi_host", item.get("wifi_ip", item.get("wifi", address_values[1] if len(address_values) > 1 else ""))))
+            slots["ethernet"] = normalize_network_host(item.get("ethernet_host", item.get("ethernet_ip", item.get("ethernet", address_values[2] if len(address_values) > 2 else ""))))
     elif isinstance(item, str):
-        raw_values.append(item)
-    if fallback_host:
-        raw_values.append(fallback_host)
+        slots["main"] = normalize_network_host(item)
+    if fallback_host and not any(slots.values()):
+        slots["main"] = normalize_network_host(fallback_host)
+    return slots
 
+
+def normalize_machine_addresses(item: Any, fallback_host: Any = "") -> list[str]:
+    slots = normalize_machine_address_slots(item, fallback_host)
     addresses: list[str] = []
     seen: set[str] = set()
-    for raw in raw_values:
+    for raw in (slots["main"], slots["wifi"], slots["ethernet"]):
         address = normalize_network_host(raw)
         if not address:
             continue
@@ -1946,7 +2134,6 @@ def normalize_machine_addresses(item: Any, fallback_host: Any = "") -> list[str]
         seen.add(key)
         addresses.append(address)
     return addresses
-
 
 def machine_primary_host(machine: dict[str, Any]) -> str:
     addresses = normalize_machine_addresses(machine)
@@ -1978,12 +2165,16 @@ def normalize_network_machines(raw: Any, config: dict[str, Any] | None = None) -
     normalized: list[dict[str, Any]] = []
     for defaults_item in defaults:
         override = raw_by_id.get(defaults_item["id"], {})
-        addresses = normalize_machine_addresses(override, defaults_item["host"])
+        address_slots = normalize_machine_address_slots(override, defaults_item["host"])
+        addresses = normalize_machine_addresses(address_slots)
         normalized.append(
             {
                 "id": defaults_item["id"],
                 "label": text_value(override.get("label", defaults_item["label"])) or defaults_item["label"],
-                "host": addresses[0] if addresses else "",
+                "host": address_slots["main"] or (addresses[0] if addresses else ""),
+                "wifi_host": address_slots["wifi"],
+                "ethernet_host": address_slots["ethernet"],
+                "address_slots": address_slots,
                 "addresses": addresses,
             }
         )
@@ -2213,11 +2404,32 @@ def portable_project_path(value: Any) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
+def artwork_file_path(value: Any, default_path: Path, default_filename: str) -> Path:
+    configured = str(value or "").strip()
+    if not configured:
+        return default_path
+    path = portable_project_path(configured)
+    if configured.endswith(("/", "\\")) or (path.exists() and path.is_dir()) or not path.suffix:
+        return path / default_filename
+    return path
+
+
 def artwork_output_path(config: dict[str, Any]) -> Path:
-    configured = str(config.get("artwork_output", "")).strip()
-    if configured:
-        return portable_project_path(configured)
-    return DEFAULT_ARTWORK_OUTPUT
+    return artwork_file_path(config.get("artwork_output", ""), DEFAULT_ARTWORK_OUTPUT, DEFAULT_ARTWORK_OUTPUT.name)
+
+
+def fallback_artwork_path(config: dict[str, Any]) -> Path | None:
+    configured = str(config.get("fallback_artwork_path", "")).strip()
+    if not configured:
+        return None
+    path = portable_project_path(configured)
+    if path.exists() and path.is_dir():
+        for name in ("fallback_artwork.jpg", "fallback_artwork.png", "current_artwork.jpg"):
+            candidate = path / name
+            if candidate.exists() and candidate.is_file():
+                return candidate
+        return None
+    return path
 
 
 def normalize_match_text(text: str) -> str:
@@ -2593,6 +2805,7 @@ class ShowEngine:
         self.bpm_last_flip_monotonic = 0.0
         self.last_camera_buttons = {"main_box": "", "pip_box": "", "background": "", "scene": ""}
         self.last_visual_button = ""
+        self.last_visual_by_layer = {str(layer): "" for layer in range(1, VISUAL_LAYER_COUNT + 1)}
         self.delivery_status = {"lights": {"last_sent": "", "count": 0}, "visuals": {"last_sent": "", "count": 0}, "cameras": {"last_sent": "", "count": 0}}
         self.active_generative_visual = dict(DEFAULT_GENERATIVE_VISUAL)
         self.active_look_name = ""
@@ -2857,7 +3070,7 @@ class ShowEngine:
                 {"key": "SECONDARY", "kind": "color", "label": "Color 2"},
                 {"key": "STROBE", "kind": "color", "label": "Color 3"},
             ],
-            "colors": {"names": SORTED_COLOR_NAMES, "hex": COLOR_HEX},
+            "colors": {"names": SORTED_COLOR_NAMES, "hex": COLOR_HEX, "hue_degrees": COLOR_HUE_DEGREES},
             "percent_choices": PERCENT_CHOICES,
         }
 
@@ -2912,7 +3125,7 @@ class ShowEngine:
             links[name] = {
                 "enabled": True,
                 "section_preset": self.state.section if self.state.section in dict(config.get("section_presets", {})) else "",
-                "now_playing_mode": self.manual_mode if self.manual_mode in {"cdj", "vinyl", "studio", "videogame"} else "",
+                "now_playing_mode": self.manual_mode if self.manual_mode in {"cdj", "vinyl", "studio", "videogame", "spotify"} else "",
                 "now_playing_opacity": self.now_playing_opacity,
                 "visual_id": self.last_visual_button,
                 "generative_visual": dict(self.active_generative_visual),
@@ -2974,16 +3187,13 @@ class ShowEngine:
                 self.active_look_name = name
                 self.set_event(f"{name} media look recalled; lights held")
         linked_sent = self.send_preset_link_actions(config, name, apply_lights=apply_light_state) if group == "performance" else []
-        auto_palette_sent: list[dict[str, Any]] = []
-        if apply_light_state and bool(config.get("use_artwork_palette", False)):
-            auto_palette_sent = self.maybe_auto_apply_artwork_palette(fallback_used=False, track_key=f"look:{name}", force=True)
         if linked_sent:
             if apply_light_state:
                 self.set_event(f"Applied {name} with linked visual/camera look")
             else:
                 self.set_event(f"Applied {name} media look; lights held")
         message = f"Applied {name}" if apply_light_state else f"Applied {name}; lights held"
-        return {"ok": True, "message": message, "sent": [*sent, *linked_sent, *auto_palette_sent], "state": self.snapshot()}
+        return {"ok": True, "message": message, "sent": [*sent, *linked_sent], "state": self.snapshot()}
 
     def color_comment(self) -> str:
         with self.lock:
@@ -3008,8 +3218,6 @@ class ShowEngine:
             self.state.source = source
         label = " + ".join(COLOR_SLOT_LABELS.get(key, key) for key in keys)
         sent = self.send_control_keys(keys, source)
-        if bool(config.get("use_artwork_palette", False)):
-            sent.extend(self.maybe_auto_apply_artwork_palette(fallback_used=False, track_key=f"manual:{source}", force=True))
         return {"ok": True, "message": f"Rotated {label}", "sent": sent, "state": self.snapshot()}
 
     def swap_primary_secondary(self, source: str = "manual rotation") -> dict[str, Any]:
@@ -3042,8 +3250,6 @@ class ShowEngine:
             self.state.strobe_color_name, self.state.strobe_color_value = color_name_to_value(accent_name, self.state.strobe_color_name)
             self.state.source = f"relationship:{relationship}"
         sent = self.send_state(f"color relationship {relationship}")
-        if bool(self.config().get("use_artwork_palette", False)):
-            sent.extend(self.maybe_auto_apply_artwork_palette(fallback_used=False, track_key=f"relationship:{relationship}", force=True))
         return {"ok": True, "message": f"Applied {relationship}", "sent": sent, "state": self.snapshot()}
 
     def apply_artwork_palette(self) -> dict[str, Any]:
@@ -3127,41 +3333,52 @@ class ShowEngine:
             return cleaned
 
         neutral_palette = neutral_items()
-        total_count = sum(count for count, _rgb in colors) or 1
+        pixels = list(small.getdata())
+        total_count = len(pixels) or 1
         colorful_count = 0
         bright_count = 0
-        candidates: list[dict[str, Any]] = []
-        for count, rgb in colors:
+        buckets: dict[str, dict[str, Any]] = {}
+
+        for rgb in pixels:
             r, g, b = rgb
             hue, saturation, value = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
             luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
             if saturation < ARTWORK_MIN_SATURATION or value < ARTWORK_MIN_USABLE_VALUE:
                 continue
-            colorful_count += count
+            colorful_count += 1
             if value < ARTWORK_MIN_BRIGHT_VALUE:
                 continue
-            bright_count += count
-            population = (count / total_count) ** 0.46
-            vividness = saturation ** 2.4
-            brightness = value ** 3.0
-            luma_bonus = 0.72 + (0.28 * luma)
-            score = population * vividness * brightness * luma_bonus
-            candidates.append(
+            bright_count += 1
+            name = nearest_color_name(hue)
+            bucket = buckets.setdefault(
+                name,
                 {
-                    "score": score,
-                    "count": count,
-                    "rgb": rgb,
-                    "hue": hue,
-                    "saturation": saturation,
-                    "value": value,
-                    "luma": luma,
-                    "name": self.rgb_to_color_name(rgb),
-                }
+                    "name": name,
+                    "count": 0,
+                    "weighted": 0.0,
+                    "r": 0.0,
+                    "g": 0.0,
+                    "b": 0.0,
+                    "saturation": 0.0,
+                    "value": 0.0,
+                    "luma": 0.0,
+                    "hue": COLOR_HUE_VALUES[name],
+                },
             )
+            # Count pixels first, then use brightness/saturation only as a tie-breaker.
+            weight = (0.72 + (0.28 * saturation)) * (0.72 + (0.28 * value)) * (0.84 + (0.16 * luma))
+            bucket["count"] += 1
+            bucket["weighted"] += weight
+            bucket["r"] += r * weight
+            bucket["g"] += g * weight
+            bucket["b"] += b * weight
+            bucket["saturation"] += saturation * weight
+            bucket["value"] += value * weight
+            bucket["luma"] += luma * weight
 
         colorful_ratio = colorful_count / total_count
         bright_ratio = bright_count / total_count
-        if not candidates or colorful_ratio < ARTWORK_MIN_COLORFUL_RATIO or bright_ratio < ARTWORK_MIN_BRIGHT_RATIO:
+        if not buckets:
             return {
                 "available": True,
                 "path": str(path),
@@ -3170,59 +3387,138 @@ class ShowEngine:
                 "neutral": True,
             }
 
-        candidates.sort(key=lambda item: item["score"], reverse=True)
+        ranked = sorted(buckets.values(), key=lambda item: (item["count"], item["weighted"]), reverse=True)
+        top_count = max(1, int(ranked[0]["count"]))
+        top_ratio = top_count / total_count
+        has_full_color_field = colorful_ratio >= ARTWORK_MIN_COLORFUL_RATIO and bright_ratio >= ARTWORK_MIN_BRIGHT_RATIO
+        has_intentional_accent = top_ratio >= ARTWORK_MIN_ACCENT_RATIO and bright_ratio >= ARTWORK_MIN_ACCENT_RATIO
+        if not (has_full_color_field or has_intentional_accent):
+            return {
+                "available": True,
+                "path": str(path),
+                "colors": neutral_palette,
+                "message": "Neutral palette: artwork has no strong color accent.",
+                "neutral": True,
+                "colorful_ratio": round(colorful_ratio, 4),
+                "bright_ratio": round(bright_ratio, 4),
+                "top_accent_ratio": round(top_ratio, 4),
+            }
         selected: list[dict[str, Any]] = []
         selected_hues: list[float] = []
         used_names: set[str] = set()
 
-        def add_candidate(candidate: dict[str, Any], role: str) -> bool:
-            name = str(candidate["name"])
+        def named_color_item(name: str, role: str, source: str = "generated", bucket: dict[str, Any] | None = None) -> dict[str, Any]:
+            clean_name, _value = color_name_to_value(name, "indigo")
+            r, g, b = color_hex_to_rgb(COLOR_HEX[clean_name])
+            item = {
+                "name": clean_name,
+                "hex": f"#{r:02x}{g:02x}{b:02x}",
+                "rgb": [r, g, b],
+                "source": source,
+                "role": role,
+            }
+            if bucket:
+                coverage = int(bucket["count"])
+                item.update(
+                    {
+                        "coverage": coverage,
+                        "coverage_ratio": round(coverage / total_count, 4),
+                        "bucket_ratio": round(coverage / top_count, 3),
+                        "brightness": round(float(bucket["value"] / max(bucket["weighted"], 0.0001)), 3),
+                        "saturation": round(float(bucket["saturation"] / max(bucket["weighted"], 0.0001)), 3),
+                    }
+                )
+            return item
+
+        def generated_name(primary_hue: float, offsets: tuple[float, ...], used: set[str]) -> str:
+            for offset in offsets:
+                name = nearest_color_name(primary_hue + offset)
+                if name not in used:
+                    return name
+            return nearest_color_name(primary_hue + offsets[0])
+
+        def add_bucket(bucket: dict[str, Any], role: str, min_separation: float = 0.0) -> bool:
+            name = str(bucket["name"])
             if name in used_names:
                 return False
-            r, g, b = candidate["rgb"]
-            selected.append(
-                {
-                    "name": name,
-                    "hex": f"#{r:02x}{g:02x}{b:02x}",
-                    "rgb": [r, g, b],
-                    "source": "artwork",
-                    "role": role,
-                    "brightness": round(float(candidate["value"]), 3),
-                    "saturation": round(float(candidate["saturation"]), 3),
-                }
-            )
-            selected_hues.append(float(candidate["hue"]))
+            hue = float(bucket["hue"])
+            if selected_hues and min(self.hue_distance(hue, used_hue) for used_hue in selected_hues) < min_separation:
+                return False
+            selected.append(named_color_item(name, role, "artwork", bucket))
+            selected_hues.append(hue)
             used_names.add(name)
             return True
 
-        add_candidate(candidates[0], "Color 1")
+        def generate_harmony_from_primary(primary_bucket: dict[str, Any], start_role_index: int = 2) -> None:
+            primary_hue = float(primary_bucket["hue"])
+            role_offsets = [ARTWORK_HARMONY_SECONDARY_OFFSETS, ARTWORK_HARMONY_ACCENT_OFFSETS]
+            for role_index in range(start_role_index, 4):
+                offsets = role_offsets[min(role_index - 2, len(role_offsets) - 1)]
+                name = generated_name(primary_hue, offsets, used_names)
+                used_names.add(name)
+                selected.append(named_color_item(name, f"Color {role_index}", "generated"))
+                selected_hues.append(COLOR_HUE_VALUES[name])
+
+        add_bucket(ranked[0], "Color 1")
         for role, separation in (("Color 2", ARTWORK_PRIMARY_HUE_SEPARATION), ("Color 3", ARTWORK_ACCENT_HUE_SEPARATION)):
-            best = None
+            best_bucket = None
             best_score = -1.0
-            for candidate in candidates[1:]:
-                if str(candidate["name"]) in used_names:
+            for bucket in ranked[1:]:
+                if str(bucket["name"]) in used_names:
                     continue
-                distance = min(self.hue_distance(float(candidate["hue"]), hue) for hue in selected_hues)
+                if int(bucket["count"]) < max(2, int(round(top_count * ARTWORK_CATEGORY_MIN_ROLE_RATIO))):
+                    continue
+                hue = float(bucket["hue"])
+                distance = min(self.hue_distance(hue, used_hue) for used_hue in selected_hues)
                 if distance < separation:
                     continue
-                role_score = float(candidate["score"]) * (1.0 + min(distance, 0.5))
-                if role == "Color 3":
-                    role_score *= 0.82 + (0.42 * float(candidate["saturation"]))
-                if role_score > best_score:
-                    best = candidate
-                    best_score = role_score
-            if best and add_candidate(best, role):
+                tie_bonus = 1.18 if int(bucket["count"]) >= top_count * ARTWORK_CATEGORY_CLOSE_TIE_RATIO else 1.0
+                score = (int(bucket["count"]) * tie_bonus) + (float(bucket["weighted"]) * 0.04) + (distance * top_count * 0.12)
+                if score > best_score:
+                    best_bucket = bucket
+                    best_score = score
+            if best_bucket and add_bucket(best_bucket, role, separation):
                 continue
-            for candidate in candidates[1:]:
-                if str(candidate["name"]) not in used_names and add_candidate(candidate, role):
-                    break
+            break
 
+        generated_harmony = False
+        if len(selected) < 3:
+            generated_harmony = True
+            generate_harmony_from_primary(ranked[0], len(selected) + 1)
+
+        if len(selected) > 3:
+            selected = selected[:3]
         if len(selected) < 3:
             for index in range(len(selected), 3):
-                selected.append(dict(neutral_palette[index]))
-        message = "Bright artwork palette extracted" if all(item.get("source") == "artwork" for item in selected) else "Bright artwork palette extracted with neutral fallback roles"
-        return {"available": bool(selected), "path": str(path), "colors": selected, "message": message, "neutral": False}
+                fallback = dict(neutral_palette[index])
+                if fallback["name"] in used_names:
+                    replacement = generated_name(float(ranked[0]["hue"]), ARTWORK_HARMONY_ACCENT_OFFSETS, used_names)
+                    fallback = named_color_item(replacement, f"Color {index + 1}", "generated")
+                used_names.add(fallback["name"])
+                selected.append(fallback)
 
+        source_names = [item.get("source") for item in selected]
+        if generated_harmony:
+            message = "Artwork accent matched with generated harmony roles"
+        elif all(source == "artwork" for source in source_names):
+            message = "Artwork color buckets ranked by pixel count"
+        else:
+            message = "Artwork color buckets ranked with fallback roles"
+        return {
+            "available": bool(selected),
+            "path": str(path),
+            "colors": selected,
+            "message": message,
+            "neutral": False,
+            "generated_harmony": generated_harmony,
+            "colorful_ratio": round(colorful_ratio, 4),
+            "bright_ratio": round(bright_ratio, 4),
+            "top_accent_ratio": round(top_ratio, 4),
+            "category_counts": [
+                {"name": str(bucket["name"]), "count": int(bucket["count"]), "ratio": round(int(bucket["count"]) / total_count, 4)}
+                for bucket in ranked[:8]
+            ],
+        }
     def rgb_to_color_name(self, rgb: tuple[int, int, int]) -> str:
         r, g, b = rgb
         hue, _sat, _value = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
@@ -3287,6 +3583,63 @@ class ShowEngine:
         with contextlib.suppress(OSError):
             os.utime(output_path, None)
         self.set_event(f"{status_label} artwork active: {source_path.name} ({artwork_size_label(output_size)})")
+
+    def write_generated_artwork(self, status_label: str, size_source: str = "fallback") -> bool:
+        config = self.config()
+        output_path = artwork_output_path(config)
+        output_size = artwork_dimensions(config, size_source)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+        except ModuleNotFoundError:
+            self.log_command(f"{status_label} artwork placeholder skipped: Pillow is not installed")
+            return False
+
+        width, height = output_size
+        image = Image.new("RGB", output_size, (8, 10, 16))
+        draw = ImageDraw.Draw(image)
+        font = ImageFont.load_default()
+        title = status_label.upper()
+        subtitle = "NT PERFORMANCE HUB"
+        title_box = draw.textbbox((0, 0), title, font=font)
+        subtitle_box = draw.textbbox((0, 0), subtitle, font=font)
+        title_width = title_box[2] - title_box[0]
+        title_height = title_box[3] - title_box[1]
+        subtitle_width = subtitle_box[2] - subtitle_box[0]
+        subtitle_height = subtitle_box[3] - subtitle_box[1]
+        total_height = title_height + subtitle_height + 22
+        y = max(24, (height - total_height) // 2)
+        draw.rectangle((0, 0, width, height), fill=(8, 10, 16))
+        draw.rectangle((0, 0, width, max(12, height // 24)), fill=(36, 210, 95))
+        draw.text(((width - title_width) // 2, y), title, fill=(238, 242, 255), font=font)
+        draw.text(((width - subtitle_width) // 2, y + title_height + 22), subtitle, fill=(148, 163, 184), font=font)
+
+        temp_handle = tempfile.NamedTemporaryFile(
+            prefix=f"{output_path.stem}.",
+            suffix=f".tmp{output_path.suffix}",
+            dir=output_path.parent,
+            delete=False,
+        )
+        temp_output_path = Path(temp_handle.name)
+        temp_handle.close()
+        try:
+            image.save(
+                temp_output_path,
+                format="JPEG",
+                quality=95,
+                optimize=False,
+                progressive=False,
+                subsampling=0,
+            )
+            temp_output_path.replace(output_path)
+        finally:
+            with contextlib.suppress(OSError):
+                if temp_output_path.exists():
+                    temp_output_path.unlink()
+        with contextlib.suppress(OSError):
+            os.utime(output_path, None)
+        self.set_event(f"{status_label} generated artwork active ({artwork_size_label(output_size)})")
+        return True
 
     def manual_context(self, text: str, mode: str) -> dict[str, str]:
         return {
@@ -3413,15 +3766,14 @@ class ShowEngine:
 
     def write_fallback_artwork(self, reason: str, track_key: str = "", matched_file: str = "", match_score: float = 0.0) -> None:
         config = self.config()
-        fallback_path = text_value(config.get("fallback_artwork_path", ""))
-        if not fallback_path:
+        fallback = fallback_artwork_path(config)
+        if fallback is None:
             with self.lock:
-                self.latest_artwork_status = f"{reason}; fallback artwork is not configured"
+                self.latest_artwork_status = f"{reason}; fallback artwork is not configured or is a folder without fallback_artwork/current_artwork image"
                 self.latest_artwork_track_key = track_key
                 self.latest_matched_file = matched_file
                 self.latest_match_score = match_score
             return
-        fallback = portable_project_path(fallback_path)
         if not fallback.exists():
             with self.lock:
                 self.latest_artwork_status = f"{reason}; fallback artwork missing: {fallback}"
@@ -3459,8 +3811,7 @@ class ShowEngine:
         mp3_path = resolve_indexed_mp3_path(entry, config)
         indexed_path = Path(entry["path"])
         output_path = artwork_output_path(config)
-        fallback_path = text_value(config.get("fallback_artwork_path", ""))
-        fallback_artwork = portable_project_path(fallback_path) if fallback_path else None
+        fallback_artwork = fallback_artwork_path(config)
         output_size = artwork_dimensions(config, "cdj")
         fallback_size = artwork_dimensions(config, "fallback")
         try:
@@ -3752,8 +4103,224 @@ class ShowEngine:
         sent = self.send_blt_outputs(context, "test")
         return {"ok": True, "message": "Sent enabled BLT text outputs", "sent": sent, "state": self.snapshot()}
 
+    def obs_connection_config(self) -> dict[str, Any]:
+        config = self.config()
+        timeout = OBS_REQUEST_TIMEOUT_SECONDS
+        try:
+            timeout = max(0.5, min(10.0, float(config.get("obs_request_timeout", OBS_REQUEST_TIMEOUT_SECONDS))))
+        except (TypeError, ValueError):
+            timeout = OBS_REQUEST_TIMEOUT_SECONDS
+        return {
+            "enabled": bool(config.get("obs_enabled", False)),
+            "host": text_value(config.get("obs_host", "127.0.0.1")) or "127.0.0.1",
+            "port": parse_int(config.get("obs_port", 4455), 4455, 1, 65535),
+            "password": text_value(config.get("obs_password", "")),
+            "timeout": timeout,
+        }
+
+    def obs_auth_string(self, password: str, salt: str, challenge: str) -> str:
+        import base64
+        import hashlib
+
+        secret = base64.b64encode(hashlib.sha256((password + salt).encode("utf-8")).digest()).decode("ascii")
+        return base64.b64encode(hashlib.sha256((secret + challenge).encode("utf-8")).digest()).decode("ascii")
+
+    def obs_websocket_request(self, request_type: str, request_data: dict[str, Any] | None = None) -> dict[str, Any]:
+        import uuid
+
+        obs = self.obs_connection_config()
+        if not obs["enabled"]:
+            raise RuntimeError("OBS control is disabled. Enable OBS WebSocket in Settings first.")
+        try:
+            import websocket  # type: ignore
+        except Exception as exc:
+            raise RuntimeError("OBS control needs websocket-client. Run Install NT Performance Hub.bat or pip install -r requirements.txt.") from exc
+
+        url = f"ws://{obs['host']}:{obs['port']}"
+        ws = None
+        try:
+            ws = websocket.create_connection(url, timeout=obs["timeout"], subprotocols=["obswebsocket.json"])
+            hello = json.loads(ws.recv())
+            hello_data = hello.get("d", {}) if isinstance(hello, dict) else {}
+            rpc_version = parse_int(hello_data.get("rpcVersion", 1), 1, 1, 1)
+            identify_data: dict[str, Any] = {"rpcVersion": rpc_version, "eventSubscriptions": 0}
+            auth = hello_data.get("authentication")
+            if isinstance(auth, dict):
+                if not obs["password"]:
+                    raise RuntimeError("OBS WebSocket requires a password. Save it in Settings.")
+                identify_data["authentication"] = self.obs_auth_string(
+                    obs["password"],
+                    text_value(auth.get("salt", "")),
+                    text_value(auth.get("challenge", "")),
+                )
+            ws.send(json.dumps({"op": 1, "d": identify_data}))
+            identified = json.loads(ws.recv())
+            if not isinstance(identified, dict) or identified.get("op") != 2:
+                raise RuntimeError("OBS WebSocket did not accept the connection.")
+
+            request_id = str(uuid.uuid4())
+            ws.send(json.dumps({
+                "op": 6,
+                "d": {
+                    "requestType": request_type,
+                    "requestId": request_id,
+                    "requestData": request_data or {},
+                },
+            }))
+            deadline = time.monotonic() + obs["timeout"]
+            while time.monotonic() < deadline:
+                response = json.loads(ws.recv())
+                if not isinstance(response, dict) or response.get("op") != 7:
+                    continue
+                data = response.get("d", {})
+                if data.get("requestId") != request_id:
+                    continue
+                status = data.get("requestStatus", {})
+                if not status.get("result", False):
+                    comment = text_value(status.get("comment", ""))
+                    raise RuntimeError(comment or f"OBS rejected {request_type}.")
+                return data
+            raise RuntimeError(f"OBS did not respond to {request_type} before timeout.")
+        except RuntimeError:
+            raise
+        except Exception as exc:
+            raise RuntimeError(f"OBS WebSocket request failed: {exc}") from exc
+        finally:
+            if ws is not None:
+                with contextlib.suppress(Exception):
+                    ws.close()
+
+    def obs_command(self, action: str) -> dict[str, Any]:
+        actions = {
+            "record_status": ("GetRecordStatus", "Recording status checked", "record"),
+            "record_start": ("StartRecord", "OBS recording started", "record"),
+            "record_stop": ("StopRecord", "OBS recording stopped", "record"),
+            "record_toggle": ("ToggleRecord", "OBS recording toggled", "record"),
+            "record_pause": ("PauseRecord", "OBS recording paused", "record"),
+            "record_resume": ("ResumeRecord", "OBS recording resumed", "record"),
+            "record_pause_toggle": ("ToggleRecordPause", "OBS recording pause toggled", "record"),
+            "record_split": ("SplitRecordFile", "OBS recording split file created", "record"),
+            "record_chapter": ("CreateRecordChapter", "OBS recording chapter marker created", "record"),
+            "stream_status": ("GetStreamStatus", "Stream status checked", "stream"),
+            "stream_start": ("StartStream", "OBS stream started", "stream"),
+            "stream_stop": ("StopStream", "OBS stream stopped", "stream"),
+            "stream_toggle": ("ToggleStream", "OBS stream toggled", "stream"),
+            "replay_status": ("GetReplayBufferStatus", "Replay buffer status checked", "replay"),
+            "replay_start": ("StartReplayBuffer", "OBS replay buffer started", "replay"),
+            "replay_stop": ("StopReplayBuffer", "OBS replay buffer stopped", "replay"),
+            "replay_toggle": ("ToggleReplayBuffer", "OBS replay buffer toggled", "replay"),
+            "replay_save": ("SaveReplayBuffer", "OBS replay buffer saved", "replay"),
+            "virtualcam_status": ("GetVirtualCamStatus", "Virtual camera status checked", "virtualcam"),
+            "virtualcam_start": ("StartVirtualCam", "OBS virtual camera started", "virtualcam"),
+            "virtualcam_stop": ("StopVirtualCam", "OBS virtual camera stopped", "virtualcam"),
+            "virtualcam_toggle": ("ToggleVirtualCam", "OBS virtual camera toggled", "virtualcam"),
+            "studio_status": ("GetStudioModeEnabled", "Studio mode status checked", "studio"),
+            "studio_transition": ("TriggerStudioModeTransition", "OBS studio transition triggered", "studio"),
+            "version": ("GetVersion", "OBS version checked", "info"),
+            "stats": ("GetStats", "OBS stats checked", "info"),
+        }
+        if action == "studio_toggle":
+            current = self.obs_websocket_request("GetStudioModeEnabled")
+            current_data = current.get("responseData", {}) if isinstance(current, dict) else {}
+            next_enabled = not bool(current_data.get("studioModeEnabled", False))
+            response = self.obs_websocket_request("SetStudioModeEnabled", {"studioModeEnabled": next_enabled})
+            data = response.get("responseData", {}) if isinstance(response, dict) else {}
+            status = dict(getattr(self, "obs_status", {}))
+            status.update({
+                "enabled": True,
+                "available": True,
+                "message": "OBS studio mode enabled" if next_enabled else "OBS studio mode disabled",
+                "last_action": action,
+                "last_checked": datetime.now().isoformat(timespec="seconds"),
+                "studio_mode": next_enabled,
+                "raw": data,
+            })
+            with self.lock:
+                self.obs_status = status
+                self.set_event(status["message"])
+            return {"ok": True, "message": status["message"], "obs": status, "state": self.snapshot(), "config": self.config_payload()}
+        if action == "refresh_status":
+            current_status = dict(getattr(self, "obs_status", {}))
+            current_status.update({
+                "enabled": True,
+                "available": True,
+                "message": "OBS status refreshed",
+                "last_action": action,
+                "last_checked": datetime.now().isoformat(timespec="seconds"),
+            })
+            errors: dict[str, str] = {}
+            for status_action, (request_type, _message, category) in {
+                "record_status": actions["record_status"],
+                "stream_status": actions["stream_status"],
+                "replay_status": actions["replay_status"],
+                "virtualcam_status": actions["virtualcam_status"],
+                "studio_status": actions["studio_status"],
+                "version": actions["version"],
+                "stats": actions["stats"],
+            }.items():
+                try:
+                    response = self.obs_websocket_request(request_type)
+                    data = response.get("responseData", {}) if isinstance(response, dict) else {}
+                    self.update_obs_status_from_response(current_status, category, data)
+                except RuntimeError as exc:
+                    errors[status_action] = str(exc)
+            current_status["errors"] = errors
+            with self.lock:
+                self.obs_status = current_status
+                self.set_event("OBS status refreshed")
+            return {"ok": True, "message": "OBS status refreshed", "obs": current_status, "state": self.snapshot(), "config": self.config_payload()}
+        if action not in actions:
+            raise ValueError(f"Unknown OBS command: {action}")
+        request_type, message, category = actions[action]
+        response = self.obs_websocket_request(request_type)
+        data = response.get("responseData", {}) if isinstance(response, dict) else {}
+        status = dict(getattr(self, "obs_status", {}))
+        status.update({
+            "enabled": True,
+            "available": True,
+            "message": message,
+            "last_action": action,
+            "last_checked": datetime.now().isoformat(timespec="seconds"),
+            "raw": data,
+        })
+        self.update_obs_status_from_response(status, category, data)
+        with self.lock:
+            self.obs_status = status
+            self.set_event(message)
+        return {"ok": True, "message": message, "obs": status, "state": self.snapshot(), "config": self.config_payload()}
+
+    def update_obs_status_from_response(self, status: dict[str, Any], category: str, data: dict[str, Any]) -> None:
+        if category == "record":
+            if "outputActive" in data:
+                status["recording"] = data.get("outputActive")
+            if "outputPaused" in data:
+                status["record_paused"] = data.get("outputPaused")
+            if "outputTimecode" in data:
+                status["record_timecode"] = data.get("outputTimecode")
+        elif category == "stream":
+            if "outputActive" in data:
+                status["streaming"] = data.get("outputActive")
+            if "outputReconnecting" in data:
+                status["stream_reconnecting"] = data.get("outputReconnecting")
+            if "outputTimecode" in data:
+                status["stream_timecode"] = data.get("outputTimecode")
+        elif category == "replay":
+            if "outputActive" in data:
+                status["replay_buffer"] = data.get("outputActive")
+        elif category == "virtualcam":
+            if "outputActive" in data:
+                status["virtual_cam"] = data.get("outputActive")
+        elif category == "studio":
+            if "studioModeEnabled" in data:
+                status["studio_mode"] = data.get("studioModeEnabled")
+        elif category == "info":
+            if "obsVersion" in data or "obsWebSocketVersion" in data:
+                status["version"] = data
+            else:
+                status["stats"] = data
     def enter_manual_mode(self, mode: str) -> dict[str, Any]:
         config = self.config()
+        fallback_path = fallback_artwork_path(config)
         if mode == "vinyl":
             text = str(config.get("vinyl_track_text", DEFAULT_VINYL_TRACK_TEXT))
             source_path = portable_project_path(config.get("vinyl_logo_path", DEFAULT_VINYL_LOGO_PATH))
@@ -3765,17 +4332,29 @@ class ShowEngine:
         elif mode == "videogame":
             text = str(config.get("videogame_track_text", DEFAULT_VIDEOGAME_TRACK_TEXT))
             source_path = portable_project_path(config.get("videogame_artwork_path", DEFAULT_VIDEOGAME_ARTWORK_PATH))
-            if not source_path.exists():
-                fallback_path = portable_project_path(config.get("fallback_artwork_path", DEFAULT_VIDEOGAME_ARTWORK_PATH))
-                if fallback_path.exists():
-                    source_path = fallback_path
             status_label = "Videogames"
+        elif mode == "spotify":
+            text = str(config.get("spotify_track_text", DEFAULT_SPOTIFY_TRACK_TEXT))
+            source_path = portable_project_path(config.get("spotify_artwork_path", DEFAULT_SPOTIFY_ARTWORK_PATH))
+            status_label = "Spotify"
         else:
             raise ValueError(f"Unknown manual mode: {mode}")
-        if not source_path.exists():
-            raise ValueError(f"{status_label} file does not exist: {source_path}")
-        self.write_placeholder_artwork(source_path, status_label, mode)
-        self.maybe_auto_apply_artwork_palette(fallback_used=False, track_key=f"manual:{mode}:{source_path}", force=True)
+
+        fallback_used = False
+        artwork_written = False
+        if not source_path.is_file() and fallback_path is not None and fallback_path.is_file():
+            source_path = fallback_path
+            fallback_used = True
+        if source_path.is_file():
+            self.write_placeholder_artwork(source_path, status_label, mode)
+            artwork_written = True
+        else:
+            artwork_written = self.write_generated_artwork(status_label, mode)
+            fallback_used = True
+            self.log_command(f"{status_label} artwork file not found; generated placeholder instead of canceling mode switch")
+        if artwork_written:
+            track_key = f"manual:{mode}:{source_path if source_path.is_file() else 'generated'}"
+            self.maybe_auto_apply_artwork_palette(fallback_used=fallback_used, track_key=track_key, force=True)
         context = self.manual_context(text, mode)
         sent = self.send_blt_outputs(context, mode)
         with self.lock:
@@ -3795,6 +4374,47 @@ class ShowEngine:
             with self.lock:
                 self.latest_blt_context = context
         return {"ok": True, "message": "CDJ artwork mode resumed", "sent": sent, "state": self.snapshot()}
+
+    def bpm_timing_snapshot(self) -> dict[str, Any]:
+        with self.lock:
+            return {
+                "bpm": float(self.bpm),
+                "division": self.bpm_division,
+                "mode": self.bpm_flip_mode,
+                "seconds": float(self.bpm_seconds),
+                "interval_ms": int(self.bpm_interval_ms),
+                "running": bool(self.bpm_running),
+            }
+
+    def send_bpm_timing_osc(self, config: dict[str, Any] | None = None, trigger: str = "update") -> list[dict[str, Any]]:
+        config = config or self.config()
+        timing = self.bpm_timing_snapshot()
+        sent: list[dict[str, Any]] = []
+
+        def send_float(kind: str, key: str, value: float) -> None:
+            address = clean_osc_address(config.get(key, ""))
+            if not address:
+                return
+            self.send_osc_float(config, address, value)
+            sent.append({
+                "kind": "bpm_timing",
+                "trigger": trigger,
+                "output": kind,
+                "address": address,
+                "value": value,
+            })
+
+        normalized_trigger = text_value(trigger).casefold() or "update"
+        if normalized_trigger in {"update", "start", "resync"}:
+            send_float("bpm", "bpm_osc_bpm_address", timing["bpm"])
+        pulse_key = {
+            "start": "bpm_osc_start_address",
+            "resync": "bpm_osc_resync_address",
+            "stop": "bpm_osc_stop_address",
+        }.get(normalized_trigger)
+        if pulse_key:
+            send_float(normalized_trigger, pulse_key, 1.0)
+        return sent
 
     def set_bpm(self, bpm: Any | None = None, division: Any | None = None, seconds: Any | None = None) -> None:
         with self.lock:
@@ -3834,8 +4454,12 @@ class ShowEngine:
             self.bpm_interval_ms = bpm_flip_interval_ms(self.bpm, self.bpm_division)
             if changed:
                 self.set_event(f"BPM snapped to {self.bpm:g} from {source}")
-        if changed and self.bpm_running:
-            self.bpm_resync_event.set()
+        if changed:
+            if self.bpm_running:
+                self.bpm_resync_event.set()
+                self.send_bpm_timing_osc(trigger="resync")
+            else:
+                self.send_bpm_timing_osc(trigger="update")
         return changed
 
     def start_bpm_swap(self, bpm: Any | None = None, division: Any | None = None, seconds: Any | None = None) -> dict[str, Any]:
@@ -3851,7 +4475,8 @@ class ShowEngine:
             if not self.bpm_thread or not self.bpm_thread.is_alive():
                 self.bpm_thread = threading.Thread(target=self.bpm_loop, name="BPMColorRotation", daemon=True)
                 self.bpm_thread.start()
-        return {"ok": True, "message": "BPM color rotation started", "state": self.snapshot()}
+        sent = self.send_bpm_timing_osc(trigger="start")
+        return {"ok": True, "message": "BPM color rotation started", "sent": sent, "state": self.snapshot()}
 
     def stop_bpm_swap(self) -> dict[str, Any]:
         with self.lock:
@@ -3859,7 +4484,8 @@ class ShowEngine:
             self.bpm_stop_event.set()
             self.bpm_resync_event.set()
             self.set_event("BPM color rotation stopped")
-        return {"ok": True, "message": "BPM color rotation stopped", "state": self.snapshot()}
+        sent = self.send_bpm_timing_osc(trigger="stop")
+        return {"ok": True, "message": "BPM color rotation stopped", "sent": sent, "state": self.snapshot()}
 
     def update_bpm_swap(self, bpm: Any | None = None, division: Any | None = None, seconds: Any | None = None) -> dict[str, Any]:
         self.set_bpm(bpm, division, seconds)
@@ -3878,9 +4504,11 @@ class ShowEngine:
                 self.set_event(f"Color rotation set to every {self.bpm_seconds:g} seconds")
             else:
                 self.set_event(f"BPM color rotation set to {self.bpm:g} BPM, {self.bpm_division}")
+        trigger = "resync" if running else "update"
         if running:
             self.bpm_resync_event.set()
-        return {"ok": True, "message": "BPM color rotation updated", "config": self.config_payload(), "state": self.snapshot()}
+        sent = self.send_bpm_timing_osc(config, trigger=trigger)
+        return {"ok": True, "message": "BPM color rotation updated", "sent": sent, "config": self.config_payload(), "state": self.snapshot()}
 
     def set_bpm_follow(self, enabled: Any) -> dict[str, Any]:
         follow_enabled = bool_from_payload(enabled)
@@ -3898,9 +4526,11 @@ class ShowEngine:
         else:
             config["bpm_flip_bpm"] = str(self.bpm)
         save_config(config)
+        sent = self.send_bpm_timing_osc(config, trigger="resync" if self.bpm_running else "update")
         return {
             "ok": True,
             "message": "Following now playing BPM" if follow_enabled else "Manual BPM control enabled",
+            "sent": sent,
             "config": self.config_payload(),
             "state": self.snapshot(),
         }
@@ -3919,7 +4549,8 @@ class ShowEngine:
                 self.set_event(f"Color rotation resynced every {self.bpm_seconds:g} seconds")
             else:
                 self.set_event(f"BPM color rotation resynced at {self.bpm:g} BPM, {self.bpm_division}")
-        return {"ok": True, "message": "BPM color rotation resynced", "state": self.snapshot()}
+        sent = self.send_bpm_timing_osc(trigger="resync")
+        return {"ok": True, "message": "BPM color rotation resynced", "sent": sent, "state": self.snapshot()}
 
     def rotate_color_slots(self, keys: list[str]) -> None:
         attrs = {
@@ -4090,6 +4721,13 @@ class ShowEngine:
             "studio_track_text": text_value(config.get("studio_track_text", DEFAULT_STUDIO_TRACK_TEXT)),
             "videogame_artwork_path": text_value(config.get("videogame_artwork_path", DEFAULT_VIDEOGAME_ARTWORK_PATH)),
             "videogame_track_text": text_value(config.get("videogame_track_text", DEFAULT_VIDEOGAME_TRACK_TEXT)),
+            "spotify_artwork_path": text_value(config.get("spotify_artwork_path", DEFAULT_SPOTIFY_ARTWORK_PATH)),
+            "spotify_track_text": text_value(config.get("spotify_track_text", DEFAULT_SPOTIFY_TRACK_TEXT)),
+            "spotify_enabled": bool(config.get("spotify_enabled", False)),
+            "spotify_client_id": text_value(config.get("spotify_client_id", "")),
+            "spotify_redirect_uri": text_value(config.get("spotify_redirect_uri", "http://127.0.0.1:8080/spotify/callback")),
+            "spotify_market": text_value(config.get("spotify_market", "US")),
+            "spotify_auth_ready": bool(text_value(config.get("spotify_client_id", ""))),
             "output_pixels": normalize_artwork_size(config.get("output_pixels", DEFAULT_OUTPUT_PIXELS)),
             "cdj_artwork_width": artwork_dimensions(config, "cdj")[0],
             "cdj_artwork_height": artwork_dimensions(config, "cdj")[1],
@@ -4101,12 +4739,18 @@ class ShowEngine:
             "studio_artwork_height": artwork_dimensions(config, "studio")[1],
             "videogame_artwork_width": artwork_dimensions(config, "videogame")[0],
             "videogame_artwork_height": artwork_dimensions(config, "videogame")[1],
+            "spotify_artwork_width": artwork_dimensions(config, "spotify")[0],
+            "spotify_artwork_height": artwork_dimensions(config, "spotify")[1],
             "bpm_flip_bpm": text_value(config.get("bpm_flip_bpm", "125")),
             "bpm_flip_division": normalize_bpm_swap_rate(config.get("bpm_flip_division", "1/4")),
             "bpm_flip_mode": normalize_bpm_flip_mode(config.get("bpm_flip_mode", "bars")),
             "bpm_flip_seconds": text_value(config.get("bpm_flip_seconds", "8")),
             "bpm_rotation_slots": normalize_bpm_rotation_slots(config.get("bpm_rotation_slots", DEFAULT_BPM_ROTATION_SLOTS), require_multiple=True),
             "bpm_follow_now_playing": bool(config.get("bpm_follow_now_playing", False)),
+            "bpm_osc_bpm_address": clean_osc_address(config.get("bpm_osc_bpm_address", "")),
+            "bpm_osc_start_address": clean_osc_address(config.get("bpm_osc_start_address", "")),
+            "bpm_osc_resync_address": clean_osc_address(config.get("bpm_osc_resync_address", "")),
+            "bpm_osc_stop_address": clean_osc_address(config.get("bpm_osc_stop_address", "")),
             "default_fallback_template": text_value(config.get("default_fallback_template", DEFAULT_TEMPLATE)),
             "look_apply_lights": bool(config.get("look_apply_lights", True)),
             "preset_keep_current_colors": bool(config.get("preset_keep_current_colors", False)),
@@ -4143,10 +4787,16 @@ class ShowEngine:
             "active_performance_bank": active_performance_bank,
             "panic_safe": panic_safe,
             "controls": self.control_metadata(),
-            "colors": {"names": SORTED_COLOR_NAMES, "hex": COLOR_HEX},
+            "colors": {"names": SORTED_COLOR_NAMES, "hex": COLOR_HEX, "hue_degrees": COLOR_HUE_DEGREES},
             "percent_choices": PERCENT_CHOICES,
             "bpm_divisions": [name for name, _multiplier in BPM_FLIP_DIVISIONS],
             "preset_groups": self.preset_payload(),
+            "obs_enabled": bool(config.get("obs_enabled", False)),
+            "obs_host": text_value(config.get("obs_host", "127.0.0.1")) or "127.0.0.1",
+            "obs_port": parse_int(config.get("obs_port", 4455), 4455, 1, 65535),
+            "obs_password": "",
+            "obs_password_saved": bool(text_value(config.get("obs_password", ""))),
+            "obs_status": dict(getattr(self, "obs_status", {})),
         }
 
     def update_config(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -4171,6 +4821,12 @@ class ShowEngine:
             "studio_track_text",
             "videogame_artwork_path",
             "videogame_track_text",
+            "spotify_artwork_path",
+            "spotify_track_text",
+            "spotify_client_id",
+            "spotify_redirect_uri",
+            "spotify_market",
+            "obs_host",
             "default_fallback_template",
             "neutral_artwork_color",
             "neutral_artwork_primary",
@@ -4201,6 +4857,14 @@ class ShowEngine:
             config["beatlink_port"] = parse_int(payload["beatlink_port"], 8088, 1, 65535)
         if "resolume_port" in payload:
             config["resolume_port"] = parse_int(payload["resolume_port"], 7000, 1, 65535)
+        if "obs_port" in payload:
+            config["obs_port"] = parse_int(payload["obs_port"], 4455, 1, 65535)
+        if "obs_enabled" in payload:
+            config["obs_enabled"] = bool_from_payload(payload["obs_enabled"])
+        if "obs_password" in payload and text_value(payload.get("obs_password", "")):
+            config["obs_password"] = text_value(payload.get("obs_password", ""))
+        if "spotify_enabled" in payload:
+            config["spotify_enabled"] = bool_from_payload(payload["spotify_enabled"])
         if "osc_targets" in payload:
             config["osc_targets"] = [
                 target
@@ -4228,6 +4892,9 @@ class ShowEngine:
             config["bpm_rotation_slots"] = normalize_bpm_rotation_slots(payload.get("bpm_rotation_slots"), require_multiple=True, default_on_empty=False)
         if "bpm_follow_now_playing" in payload:
             config["bpm_follow_now_playing"] = bool_from_payload(payload["bpm_follow_now_playing"])
+        for key in BPM_TIMING_OSC_ADDRESS_KEYS:
+            if key in payload:
+                config[key] = clean_osc_address(payload.get(key, ""))
         if "look_apply_lights" in payload:
             config["look_apply_lights"] = bool_from_payload(payload["look_apply_lights"])
         if "preset_keep_current_colors" in payload:
@@ -4400,6 +5067,7 @@ class ShowEngine:
         vinyl_keys = {"vinyl_track_text", "vinyl_logo_path", "vinyl_artwork_width", "vinyl_artwork_height", *global_artwork_keys}
         studio_keys = {"studio_track_text", "studio_artwork_path", "studio_artwork_width", "studio_artwork_height", *global_artwork_keys}
         videogame_keys = {"videogame_track_text", "videogame_artwork_path", "videogame_artwork_width", "videogame_artwork_height", *global_artwork_keys}
+        spotify_keys = {"spotify_track_text", "spotify_artwork_path", "spotify_artwork_width", "spotify_artwork_height", *global_artwork_keys}
         cdj_artwork_keys = {"music_root", "fallback_artwork_path", "cdj_artwork_width", "cdj_artwork_height", *fallback_size_keys, *global_artwork_keys}
         try:
             if mode == "vinyl" and changed_keys.intersection(vinyl_keys):
@@ -4411,6 +5079,9 @@ class ShowEngine:
             elif mode == "videogame" and changed_keys.intersection(videogame_keys):
                 result = self.enter_manual_mode("videogame")
                 message = f"Settings saved; {result.get('message', 'Videogames mode refreshed')}"
+            elif mode == "spotify" and changed_keys.intersection(spotify_keys):
+                result = self.enter_manual_mode("spotify")
+                message = f"Settings saved; {result.get('message', 'Spotify mode refreshed')}"
             elif mode == "cdj" and self.latest_blt_context and changed_keys.intersection(cdj_artwork_keys):
                 self.resume_cdj()
                 message = "Settings saved; CDJ artwork/text refreshed"
@@ -4455,8 +5126,6 @@ class ShowEngine:
             {"link": link, "label": label, "address": address, "value": output_value, "slot": index}
             for index, address in enumerate(addresses)
         ]
-        if key in COLOR_SLOT_KEYS and bool(config.get("use_artwork_palette", False)):
-            sent.extend(self.maybe_auto_apply_artwork_palette(fallback_used=False, track_key=f"web-control:{key}", force=True))
         return {
             "ok": True,
             "message": f"Sent {label}",
@@ -4555,6 +5224,15 @@ class ShowEngine:
         self.send_osc_float(config, address, 1.0)
         return {"label": label, "address": address, "value": 1.0}
 
+    def set_last_visual_state(self, item: dict[str, Any]) -> None:
+        item_id = text_value(item.get("id", ""))
+        if not item_id:
+            return
+        self.last_visual_button = item_id
+        layer = visual_item_layer(item)
+        if layer:
+            self.last_visual_by_layer[str(layer)] = item_id
+
     def visual_trigger(self, item_id: Any) -> dict[str, Any]:
         item_id_text = text_value(item_id)
         visual_items = normalize_visual_controls(self.config().get("visual_controls", []))
@@ -4568,7 +5246,7 @@ class ShowEngine:
         if direct:
             sent.append(direct)
         with self.lock:
-            self.last_visual_button = item_id_text
+            self.set_last_visual_state(item)
         if not sent:
             self.set_event(f"{label} needs an OSC address")
             return {"ok": True, "message": f"{label} needs an OSC address", "state": self.snapshot()}
@@ -4800,11 +5478,13 @@ class ShowEngine:
         config["bpm_follow_now_playing"] = self.bpm_follow_now_playing
         config["bpm_rotation_slots"] = list(self.bpm_rotation_slots)
         save_config(config)
+        sent = self.send_bpm_timing_osc(config, trigger="resync" if running else "stop")
         return {
             "kind": "bpm",
             "label": "BPM Color Rotation",
             "value": "running" if running else "stopped",
             "display": f"{self.bpm:g} BPM {self.bpm_division}",
+            "sent": sent,
         }
 
     def send_preset_link_actions(self, config: dict[str, Any], preset_name: str, apply_lights: bool = True) -> list[dict[str, Any]]:
@@ -4827,11 +5507,13 @@ class ShowEngine:
                 item["kind"] = "section_preset"
                 sent.append(item)
         active_visual = ""
+        active_visual_item: dict[str, Any] | None = None
         active_cameras: dict[str, str] = {}
         for kind, item in self.linked_items_for_config(config, link):
             if kind == "visual":
                 direct = self.send_visual_item(config, item)
                 active_visual = text_value(item.get("id", ""))
+                active_visual_item = item
             else:
                 direct = self.send_camera_item(config, item)
                 active_cameras[kind] = text_value(item.get("id", ""))
@@ -4869,8 +5551,8 @@ class ShowEngine:
                 "value": gen_values.get("preset", ""),
             })
         with self.lock:
-            if active_visual:
-                self.last_visual_button = active_visual
+            if active_visual_item:
+                self.set_last_visual_state(active_visual_item)
             for group_key, item_id in active_cameras.items():
                 self.last_camera_buttons[group_key] = item_id
         if active_visual:
@@ -5008,7 +5690,7 @@ class ShowEngine:
                 sent.append(direct)
             with self.lock:
                 if kind == "visual":
-                    self.last_visual_button = item_id
+                    self.set_last_visual_state(item)
                 elif kind == "scene":
                     self.last_camera_buttons["scene"] = item_id
                 else:
@@ -5052,11 +5734,13 @@ class ShowEngine:
                 "bpm_last_flip_time": self.bpm_last_flip_time,
                 "last_camera_buttons": dict(self.last_camera_buttons),
                 "last_visual_button": self.last_visual_button,
+                "last_visual_by_layer": dict(self.last_visual_by_layer),
                 "delivery_status": {key: dict(value) for key, value in self.delivery_status.items()},
                 "generative_visual": dict(self.active_generative_visual),
                 "camera_opacity": dict(self.camera_opacity),
                 "visual_opacity": self.visual_opacity,
                 "now_playing_opacity": self.now_playing_opacity,
+                "obs": dict(getattr(self, "obs_status", {})),
                 "visual_sliders": dict(self.visual_slider_values),
                 "active_look_name": self.active_look_name,
                 "outputs": [
@@ -5114,6 +5798,8 @@ class ShowEngine:
             return self.enter_manual_mode("studio")
         if command in {"videogame", "video_game", "game"}:
             return self.enter_manual_mode("videogame")
+        if command == "spotify":
+            return self.enter_manual_mode("spotify")
         if command == "resume":
             return self.resume_cdj()
         if command == "rebuild_music_index":
@@ -5174,6 +5860,8 @@ class ShowEngine:
             return self.set_bpm_follow(payload.get("enabled"))
         if command == "bpm_update":
             return self.update_bpm_swap(payload.get("bpm"), payload.get("division"), payload.get("seconds"))
+        if command.startswith("obs_"):
+            return self.obs_command(command[4:])
         raise ValueError(f"Unknown command: {command}")
 
 
@@ -5567,6 +6255,9 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/config":
             self.send_json({"ok": True, "config": ENGINE.config_payload(), "state": ENGINE.snapshot()})
             return
+        if parsed.path == "/api/osc-backups":
+            self.send_json({"ok": True, "files": list_osc_backups(), "directory": str(OSC_BACKUP_DIR)})
+            return
         if parsed.path == "/api/generative/state":
             self.send_json(ENGINE.generative_visual_state())
             return
@@ -5618,6 +6309,50 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
                 self.send_json({"ok": False, "message": str(exc), "presets": ENGINE.preset_payload(), "state": ENGINE.snapshot()}, status=HTTPStatus.BAD_REQUEST)
             except Exception as exc:
                 self.send_json({"ok": False, "message": f"Preset save failed: {exc}", "presets": ENGINE.preset_payload(), "state": ENGINE.snapshot()}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+        if parsed.path == "/api/osc-backup/export":
+            try:
+                payload = self.read_json_body()
+                settings = collect_osc_backup_settings(ENGINE.config_payload())
+                backup = build_osc_backup_payload(settings)
+                path = osc_backup_path(payload.get("filename", ""))
+                path.write_text(json.dumps(backup, indent=2), encoding="utf-8")
+                self.send_json({
+                    "ok": True,
+                    "message": f"Saved OSC backup to {path.relative_to(PROJECT_ROOT)}",
+                    "filename": path.name,
+                    "path": str(path),
+                    "relative_path": str(path.relative_to(PROJECT_ROOT)),
+                    "settings_count": len(settings),
+                    "files": list_osc_backups(),
+                })
+            except ValueError as exc:
+                self.send_json({"ok": False, "message": str(exc), "files": list_osc_backups()}, status=HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self.send_json({"ok": False, "message": f"OSC export failed: {exc}", "files": list_osc_backups()}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+        if parsed.path == "/api/osc-backup/import":
+            try:
+                payload = self.read_json_body()
+                if payload.get("filename"):
+                    path = osc_backup_path(payload.get("filename"))
+                    if not path.exists() or not path.is_file():
+                        raise ValueError(f"OSC backup file not found: {path.name}")
+                    raw = json.loads(path.read_text(encoding="utf-8"))
+                    source_name = path.name
+                else:
+                    raw = payload.get("backup", payload)
+                    source_name = text_value(payload.get("source_name", "uploaded JSON")) or "uploaded JSON"
+                settings = normalize_osc_backup_import(raw)
+                result = ENGINE.update_config(settings)
+                result["message"] = f"Imported {len(settings)} OSC setting groups from {source_name}."
+                result["imported_keys"] = sorted(settings.keys())
+                result["files"] = list_osc_backups()
+                self.send_json(result)
+            except ValueError as exc:
+                self.send_json({"ok": False, "message": str(exc), "config": ENGINE.config_payload(), "state": ENGINE.snapshot(), "files": list_osc_backups()}, status=HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self.send_json({"ok": False, "message": f"OSC import failed: {exc}", "config": ENGINE.config_payload(), "state": ENGINE.snapshot(), "files": list_osc_backups()}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 

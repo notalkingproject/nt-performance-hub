@@ -16,6 +16,8 @@ You need:
 - [Beat Link Trigger](https://github.com/Deep-Symmetry/beat-link-trigger) if you want live CDJ track info.
 - Resolume if you want visuals, lights, cameras, scenes, text, or opacity controlled by OSC.
 - A music folder the server computer can read if you want album-art matching.
+- OBS with WebSocket enabled if you want the app to start/stop recording or streaming.
+- Spotify account/API setup later if you want Spotify metadata to feed Now Playing and artwork colors.
 
 ## What The App Does
 
@@ -105,6 +107,12 @@ Default OSC port:
 
 OSC uses UDP. That means NT Performance Hub can send commands, but it cannot fully prove Resolume received every message.
 
+
+## OBS And Spotify
+
+OBS control is optional. If you use it, OBS should run on the same performance PC as NT Performance Hub. Enable OBS WebSocket in OBS, then save the host, port, and password in NT Performance Hub Settings.
+
+Spotify is planned as its own Now Playing source. It should use a login flow so the app can read current track metadata and artwork without storing secrets in GitHub. Local tokens and secrets belong in ignored config files only.
 ## Music And Artwork
 
 For album-art matching, the performance PC must be able to read the music folder.

@@ -21,3 +21,8 @@ Thumbs.db
 data/*.pid
 logs/*.log
 data/*.cmd
+data/current_artwork.*
+.env
+.env.*
+config/*secret*
+config/*token*

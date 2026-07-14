@@ -34,8 +34,19 @@ const divisionButtons = document.querySelector("#divisionButtons");
 const linkControls = document.querySelector("#linkControls");
 const settingsForm = document.querySelector("#settingsForm");
 const settingsStatus = document.querySelector("#settingsStatus");
+const exportOscSettings = document.querySelector("#exportOscSettings");
+const downloadOscSettings = document.querySelector("#downloadOscSettings");
+const importOscSettings = document.querySelector("#importOscSettings");
+const importProjectOscSettings = document.querySelector("#importProjectOscSettings");
+const oscBackupFileNameInput = document.querySelector("#oscBackupFileName");
+const oscImportFileNameInput = document.querySelector("#oscImportFileName");
+const oscBackupFileList = document.querySelector("#oscBackupFileList");
+const oscBackupStatus = document.querySelector("#oscBackupStatus");
 const saveSettings = document.querySelector("#saveSettings");
 const saveSettingsSticky = document.querySelector("#saveSettingsSticky");
+const obsSettingsForm = document.querySelector("#obsSettingsForm");
+const obsSettingsStatus = document.querySelector("#obsSettingsStatus");
+const saveObsSettings = document.querySelector("#saveObsSettings");
 const colorComment = document.querySelector("#colorComment");
 const copyColorComment = document.querySelector("#copyColorComment");
 const extractPalette = document.querySelector("#extractPalette");
@@ -93,11 +104,43 @@ const camerasOscStatus = document.querySelector("#camerasOscStatus");
 const saveCamerasOsc = document.querySelector("#saveCamerasOsc");
 const nowPlayingOscForm = document.querySelector("#nowPlayingOscForm");
 const nowPlayingOscStatus = document.querySelector("#nowPlayingOscStatus");
+const nowPlayingSourceTabs = document.querySelector("#nowPlayingSourceTabs");
+const nowPlayingSourceStatus = document.querySelector("#nowPlayingSourceStatus");
+const nowPlayingSettingsLabel = document.querySelector("#nowPlayingSettingsLabel");
+const beatlinkSourceForm = document.querySelector("#beatlinkSourceForm");
+const beatlinkParamsUrl = document.querySelector("#beatlinkParamsUrl");
+const musicRoot = document.querySelector("#musicRoot");
+const artworkOutputPath = document.querySelector("#artworkOutputPath");
+const fallbackArtworkPath = document.querySelector("#fallbackArtworkPath");
+const defaultFallbackTemplate = document.querySelector("#defaultFallbackTemplate");
+const cdjArtworkWidth = document.querySelector("#cdjArtworkWidth");
+const cdjArtworkHeight = document.querySelector("#cdjArtworkHeight");
+const fallbackArtworkWidth = document.querySelector("#fallbackArtworkWidth");
+const fallbackArtworkHeight = document.querySelector("#fallbackArtworkHeight");
+const beatlinkSourceStatus = document.querySelector("#beatlinkSourceStatus");
+const spotifySourceForm = document.querySelector("#spotifySourceForm");
+const spotifyEnabled = document.querySelector("#spotifyEnabled");
+const spotifyTrackText = document.querySelector("#spotifyTrackText");
+const spotifyArtworkPath = document.querySelector("#spotifyArtworkPath");
+const spotifyArtworkWidth = document.querySelector("#spotifyArtworkWidth");
+const spotifyArtworkHeight = document.querySelector("#spotifyArtworkHeight");
+const spotifyClientId = document.querySelector("#spotifyClientId");
+const spotifyRedirectUri = document.querySelector("#spotifyRedirectUri");
+const spotifyMarket = document.querySelector("#spotifyMarket");
 const saveNowPlayingOsc = document.querySelector("#saveNowPlayingOsc");
 const manualModeForm = document.querySelector("#manualModeForm");
 const vinylTrackText = document.querySelector("#vinylTrackText");
+const vinylArtworkPath = document.querySelector("#vinylArtworkPath");
+const vinylArtworkWidth = document.querySelector("#vinylArtworkWidth");
+const vinylArtworkHeight = document.querySelector("#vinylArtworkHeight");
 const studioTrackText = document.querySelector("#studioTrackText");
+const studioArtworkPath = document.querySelector("#studioArtworkPath");
+const studioArtworkWidth = document.querySelector("#studioArtworkWidth");
+const studioArtworkHeight = document.querySelector("#studioArtworkHeight");
 const videogameTrackText = document.querySelector("#videogameTrackText");
+const videogameArtworkPath = document.querySelector("#videogameArtworkPath");
+const videogameArtworkWidth = document.querySelector("#videogameArtworkWidth");
+const videogameArtworkHeight = document.querySelector("#videogameArtworkHeight");
 const vinylModeButtonText = document.querySelector("#vinylModeButtonText");
 const studioModeButtonText = document.querySelector("#studioModeButtonText");
 const videogameModeButtonText = document.querySelector("#videogameModeButtonText");
@@ -191,6 +234,9 @@ const overviewVisualGrid = document.querySelector("#overviewVisualGrid");
 const overviewGeneratorGrid = document.querySelector("#overviewGeneratorGrid");
 const overviewCameraGrid = document.querySelector("#overviewCameraGrid");
 const overviewSequenceTransport = document.querySelector("#overviewSequenceTransport");
+const overviewObsControls = document.querySelector("#overviewObsControls");
+const obsSectionControls = document.querySelector("#obsSectionControls");
+const overviewMacroButtons = document.querySelector("#overviewMacroButtons");
 const overviewReapplyLook = document.querySelector("#overviewReapplyLook");
 const overviewDefaultLook = document.querySelector("#overviewDefaultLook");
 const overviewPulseHold = document.querySelector("#overviewPulseHold");
@@ -219,6 +265,7 @@ let appSettings = null;
 let presetData = null;
 let latestShow = null;
 let settingsDirty = false;
+let obsSettingsDirty = false;
 let quickSettingsDirty = false;
 let lookLinksDirty = false;
 let lookBuilderDirty = false;
@@ -228,8 +275,12 @@ let visualsOscDirty = false;
 let camerasOscDirty = false;
 let nowPlayingOscDirty = false;
 let manualModeDirty = false;
+let optimisticNowPlayingMode = "";
+let optimisticPerformanceLookName = "";
+let activeNowPlayingSource = "";
 let activeCameraOscSection = "main_box";
-let activeVisualOscSection = "buttons";
+let activeVisualOscSection = "off";
+let activeLightOscSection = "color1";
 let activePresetGroup = "performance";
 let activeSettingsSection = "core";
 let activeShowSequence = "Main Show";
@@ -270,8 +321,37 @@ let activeFavoriteCategory = localStorage.getItem("liveDeckFavoriteCategory") ||
 let panicHoldTimer = null;
 let manualOverrideUntil = 0;
 let manualOverrideTimer = null;
-const LIVE_DECK_PANEL_KEYS = ["looks", "lights", "now-playing", "visuals", "cameras", "sequences", "generator"];
-const LIVE_DECK_DEFAULT_PANELS = { looks: true, lights: true, "now-playing": true, visuals: true, cameras: true, sequences: true, generator: true };
+const LIVE_DECK_PANEL_KEYS = ["now-playing", "lights", "visuals", "cameras", "looks", "sequences", "obs", "macros", "generator"];
+const LIVE_DECK_DEFAULT_PANELS = { "now-playing": true, lights: true, visuals: true, cameras: true, looks: true, sequences: true, obs: true, macros: true, generator: true };
+const OSC_BACKUP_KEYS = [
+  "resolume_host",
+  "resolume_port",
+  "beatlink_host",
+  "beatlink_port",
+  "beatlink_base_url",
+  "blt_params_url",
+  "network_routes",
+  "osc_targets",
+  "link_labels",
+  "osc_addresses",
+  "osc_extra_addresses",
+  "osc_output_notes",
+  "blt_osc_outputs",
+  "now_playing_opacity_address",
+  "visual_controls",
+  "visual_slider_controls",
+  "visual_opacity_address",
+  "camera_controls",
+  "camera_opacity_addresses",
+  "camera_opacity_labels",
+  "preset_links",
+  "show_sequences",
+  "look_apply_lights",
+  "bpm_osc_bpm_address",
+  "bpm_osc_start_address",
+  "bpm_osc_resync_address",
+  "bpm_osc_stop_address"
+];
 
 localStorage.setItem("liveDeckCueDispatchMode", cueDispatchMode);
 if (Object.values(stagedPerformanceCue).some(Boolean)) {
@@ -374,6 +454,20 @@ const BPM_ROTATION_OPTIONS = [
   ["color2", "Color 2"],
   ["strobe_color", "Color 3"],
 ];
+const BPM_TIMING_OSC_FIELDS = [
+  ["bpm_osc_bpm_address", "BPM Value", "/composition/layers/1/video/opacity"],
+  ["bpm_osc_start_address", "Tempo Start", "/composition/layers/1/clips/1/connect"],
+  ["bpm_osc_resync_address", "Tempo Resync", "/composition/layers/1/clips/2/connect"],
+  ["bpm_osc_stop_address", "Tempo Stop", "/composition/layers/1/clips/3/connect"],
+];
+const LIGHT_OSC_FILTERS = [
+  ["color1", "Color 1"],
+  ["color2", "Color 2"],
+  ["strobe_color", "Color 3"],
+  ["sliders", "Sliders"],
+  ["timing", "BPM Timing"],
+  ["all", "All"],
+];
 const VISUAL_LAYER_COUNT = 3;
 const VISUAL_CLIPS_PER_LAYER = 10;
 const LIGHT_SLIDER_STOPS = [0, 10, 25, 50, 75, 90, 100];
@@ -398,7 +492,7 @@ const quickSettingFields = [
   ["bpm_flip_division", "Default Division", "select:bpm"],
   ["bpm_rotation_slots", "Rotate Colors", "checks:bpm-rotation"],
   ["bpm_follow_now_playing", "Follow Now Playing BPM", "checkbox"],
-  ["look_apply_lights", "Look Lights", "checkbox"],
+  ["look_apply_lights", "Apply Lights with Looks", "checkbox"],
 ];
 
 const settingGroups = [
@@ -414,47 +508,13 @@ const settingGroups = [
       ["resolume_port", "Active Resolume OSC Port", "number"],
     ],
   },
-  {
-    title: "Music + Folder Locations",
-    fields: [
-      ["music_root", "Music Root", "text"],
-      ["artwork_output", "Current Artwork Output File", "text"],
-      ["fallback_artwork_path", "Fallback Artwork File", "text"],
-      ["vinyl_logo_path", "Vinyl Logo File", "text"],
-      ["studio_artwork_path", "Studio Artwork", "text"],
-      ["videogame_artwork_path", "Videogames Artwork", "text"],
-    ],
-  },
-  {
-    title: "Artwork Output Sizes",
-    fields: [
-      ["cdj_artwork_width", "CDJ Width", "number"],
-      ["cdj_artwork_height", "CDJ Height", "number"],
-      ["fallback_artwork_width", "Fallback Width", "number"],
-      ["fallback_artwork_height", "Fallback Height", "number"],
-      ["vinyl_artwork_width", "Vinyl Width", "number"],
-      ["vinyl_artwork_height", "Vinyl Height", "number"],
-      ["studio_artwork_width", "Studio Width", "number"],
-      ["studio_artwork_height", "Studio Height", "number"],
-      ["videogame_artwork_width", "Videogames Width", "number"],
-      ["videogame_artwork_height", "Videogames Height", "number"],
-    ],
-  },
-  {
-    title: "Text Fill Ins",
-    fields: [
-      ["vinyl_track_text", "Vinyl Track Text", "text"],
-      ["studio_track_text", "Studio Text", "text"],
-      ["videogame_track_text", "Videogames Text", "text"],
-      ["default_fallback_template", "Default Fallback Template", "textarea"],
-    ],
-  },
-  {
-    title: "Performance Defaults",
-    fields: [
-      ["look_apply_lights", "Apply Lights with Looks", "checkbox"],
-    ],
-  },
+];
+
+const obsSettingFields = [
+  ["obs_enabled", "Enable OBS Control", "checkbox"],
+  ["obs_host", "OBS WebSocket Host", "text"],
+  ["obs_port", "OBS WebSocket Port", "number"],
+  ["obs_password", "OBS WebSocket Password", "password"],
 ];
 
 function setConnection(state, text) {
@@ -467,6 +527,15 @@ function colorHex(name) {
   return appSettings?.colors?.hex?.[name] || presetData?.colors?.hex?.[name] || "#333842";
 }
 
+function colorHueDegree(name) {
+  const degree = appSettings?.colors?.hue_degrees?.[name] ?? presetData?.colors?.hue_degrees?.[name];
+  return Number.isFinite(Number(degree)) ? Number(degree) : null;
+}
+
+function colorHueLabel(name) {
+  const degree = colorHueDegree(name);
+  return degree === null ? displayColorName(name) : `${displayColorName(name)} - ${degree} deg`;
+}
 function displayColorName(name) {
   return String(name || "")
     .replace(/[_-]+/g, " ")
@@ -742,8 +811,24 @@ function dispatchPerformanceLook(name, source = "") {
     showToast(`${name} staged for GO`);
     return;
   }
+  optimisticPerformanceLookName = name;
+  if (latestShow) {
+    latestShow = {
+      ...latestShow,
+      active_look_name: name,
+      source: lookApplyLights() ? `performance:${name}` : latestShow.source,
+    };
+  }
+  refreshLookDispatchSurfaces();
+  renderSelectedButtons(latestShow);
   markManualOverride();
-  sendCommand(linkedLookPayload(name));
+  sendCommand(linkedLookPayload(name)).then((result) => {
+    if (!result && optimisticPerformanceLookName === name) {
+      optimisticPerformanceLookName = "";
+      refreshLookDispatchSurfaces();
+      renderSelectedButtons(latestShow);
+    }
+  });
   showToast(`${name} applied live`);
 }
 function dispatchVisualCue(id) {
@@ -752,6 +837,7 @@ function dispatchVisualCue(id) {
     showToast("Visual staged for GO");
     return;
   }
+  rememberVisualSelection(id);
   sendCommand({ command: "visual_trigger", id });
 }
 
@@ -1374,7 +1460,7 @@ function renderSystemConfidence(items = []) {
 function startPanicHold() {
   if (!panicSafeButton || panicHoldTimer) return;
   panicSafeButton.classList.add("holding");
-  panicSafeButton.textContent = "Keep holdingÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦";
+  panicSafeButton.textContent = "Keep holding...";
   panicHoldTimer = setTimeout(() => {
     panicHoldTimer = null;
     panicSafeButton.classList.remove("holding");
@@ -1389,7 +1475,7 @@ function startPanicHold() {
 function cancelPanicHold() {
   if (panicHoldTimer) clearTimeout(panicHoldTimer);
   panicHoldTimer = null;
-  if (panicSafeButton?.textContent === "Keep holdingÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦") {
+  if (panicSafeButton?.textContent === "Keep holding...") {
     panicSafeButton.classList.remove("holding");
     panicSafeButton.textContent = "Hold SAFE";
   }
@@ -1668,6 +1754,41 @@ function makeOverviewBpmSurface(show = latestShow, options = {}) {
   const summary = makeBpmClockSummary("BPM Color Rotation", formatBpmStatus(show));
   summary.classList.add("overview-bpm-summary");
 
+  const editor = document.createElement("div");
+  editor.className = "overview-bpm-editor";
+  const label = document.createElement("label");
+  label.className = "overview-bpm-input-field";
+  const labelText = document.createElement("span");
+  labelText.textContent = "BPM";
+  const input = document.createElement("input");
+  input.type = "number";
+  input.inputMode = "decimal";
+  input.min = "40";
+  input.max = "240";
+  input.step = "0.1";
+  input.value = String(show?.bpm || bpmInput?.value || 125);
+  label.append(labelText, input);
+  const slider = document.createElement("input");
+  slider.className = "overview-bpm-slider";
+  slider.type = "range";
+  slider.min = "40";
+  slider.max = "240";
+  slider.step = "0.1";
+  slider.value = input.value;
+  const syncOverviewBpm = (value, send = false) => {
+    const bpm = Math.max(40, Math.min(240, Number(value) || 125));
+    const display = Number.isInteger(bpm) ? String(bpm) : bpm.toFixed(1).replace(/\.0$/, "");
+    input.value = display;
+    slider.value = String(bpm);
+    setBpmUiValue(display);
+    if (send) sendCommand({ command: "bpm_update", bpm: display, division: selectedDivision });
+  };
+  input.addEventListener("input", () => syncOverviewBpm(input.value, false));
+  input.addEventListener("change", () => syncOverviewBpm(input.value, true));
+  slider.addEventListener("input", () => syncOverviewBpm(slider.value, false));
+  slider.addEventListener("change", () => syncOverviewBpm(slider.value, true));
+  editor.append(label, slider);
+
   const actions = document.createElement("div");
   actions.className = "overview-bpm-actions";
   [
@@ -1694,7 +1815,7 @@ function makeOverviewBpmSurface(show = latestShow, options = {}) {
     divisions: overviewBpmDivisions(),
     onPick: updateAppBpmDivision,
   });
-  surface.append(summary, makeBpmRotationChecks({ className: "overview-bpm-rotation", autoSave: true }), actions, divisions);
+  surface.append(summary, editor, makeBpmRotationChecks({ className: "overview-bpm-rotation", autoSave: true }), actions, divisions);
   return surface;
 }
 
@@ -1703,6 +1824,7 @@ function nowPlayingModeLabel(mode) {
   if (mode === "vinyl") return "Vinyl";
   if (mode === "studio") return "Studio";
   if (mode === "videogame") return "Videogames";
+  if (mode === "spotify") return "Spotify";
   return `${mode} mode`;
 }
 
@@ -1742,6 +1864,7 @@ async function saveOverviewManualModeText(form, statusEl) {
     statusEl.textContent = result.message || "Now Playing text saved.";
     renderManualModeForm();
     renderSettingsForm();
+      renderObsSettingsForm();
     if (result.state) renderShowState(result.state);
     await loadStatus({ full: true, force: true });
   } catch (error) {
@@ -1904,24 +2027,55 @@ function visualLayerNumber(item) {
 function visualClipNumber(item) {
   const index = Math.max(1, Number(item?.index || 1));
   const explicit = Number(item?.clip);
-  return Number.isFinite(explicit) && explicit > 0
+  return Number.isFinite(explicit) && explicit >= 0
     ? explicit
     : ((index - 1) % VISUAL_CLIPS_PER_LAYER) + 1;
 }
 
-function visualClipCoordinateLabel(layer, clip) {
-  return `L${layer} C${clip}`;
+function isVisualOffItem(item, clip = visualClipNumber(item)) {
+  return clip === 0 || String(item?.kind || "").toLowerCase() === "off";
 }
 
-function visualClipButtonLabel(_item, layer, clip) {
-  return visualClipCoordinateLabel(layer, clip);
+function visualClipCoordinateLabel(layer, clip) {
+  return clip === 0 ? `L${layer} X` : `L${layer} C${clip}`;
+}
+
+function visualClipButtonLabel(item, layer, clip) {
+  return isVisualOffItem(item, clip) ? "X" : visualClipCoordinateLabel(layer, clip);
+}
+
+
+function defaultVisualOffControl(layer) {
+  return {
+    id: `visual_l${layer}_off`,
+    index: 0,
+    layer,
+    clip: 0,
+    kind: "off",
+    name: `Layer ${layer} Clips Off`,
+    label: `L${layer} X`,
+    address: "",
+  };
+}
+
+function visualControlsWithLayerOff(items = appSettings?.visual_controls || []) {
+  const controls = [...(items || [])];
+  const ids = new Set(controls.map((item) => String(item?.id || "")));
+  for (let layer = 1; layer <= VISUAL_LAYER_COUNT; layer += 1) {
+    const offId = `visual_l${layer}_off`;
+    const hasOff = ids.has(offId) || controls.some((item) => visualLayerNumber(item) === layer && isVisualOffItem(item));
+    if (!hasOff) controls.unshift(defaultVisualOffControl(layer));
+  }
+  return controls;
 }
 
 function visualClipTitle(item, layer, clip, isPreview) {
   const cueTitle = cueButtonTitle("visual", isPreview);
+  const isOff = isVisualOffItem(item, clip);
+  const defaultName = isOff ? `Layer ${layer} Clips Off` : `Layer ${layer} Clip ${clip}`;
   const name = String(item?.name || item?.label || "").trim();
   const editHint = item ? "Right-click, long-press, or Shift-click to edit OSC" : "";
-  return [`Layer ${layer} Clip ${clip}`, name && name !== `Layer ${layer} Clip ${clip}` ? name : "", cueTitle, editHint]
+  return [defaultName, name && name !== defaultName ? name : "", cueTitle, editHint]
     .filter(Boolean)
     .join(" - ");
 }
@@ -1934,6 +2088,43 @@ function visualItemsByLayer(items) {
   return byLayer;
 }
 
+function selectedVisualByLayer(show = latestShow) {
+  const selected = {};
+  const source = show?.last_visual_by_layer || {};
+  for (let layer = 1; layer <= VISUAL_LAYER_COUNT; layer += 1) {
+    selected[String(layer)] = source[String(layer)] || "";
+  }
+  const fallback = show?.last_visual_button || "";
+  const fallbackItem = visualItemById(fallback);
+  if (fallbackItem) {
+    const layer = visualLayerNumber(fallbackItem);
+    if (layer) selected[String(layer)] = selected[String(layer)] || fallback;
+  }
+  return selected;
+}
+
+function visualItemById(id) {
+  const itemId = String(id || "");
+  if (!itemId) return null;
+  return visualControlsWithLayerOff().find((item) => item.id === itemId) || null;
+}
+
+function rememberVisualSelection(id) {
+  const item = visualItemById(id);
+  if (!item) return;
+  const layer = visualLayerNumber(item);
+  if (!layer) return;
+  const current = latestShow || {};
+  const byLayer = { ...(current.last_visual_by_layer || {}) };
+  byLayer[String(layer)] = item.id;
+  latestShow = {
+    ...current,
+    last_visual_button: item.id,
+    last_visual_by_layer: byLayer,
+  };
+  renderOverviewVisuals();
+  renderVisualControls();
+}
 function getVisualOscAddressInput(id) {
   if (!visualsOscForm) return null;
   const control = visualsOscForm.elements.namedItem(`visual_address_${id}`);
@@ -2010,7 +2201,7 @@ function openVisualClipOscEditor(item, layer, clip) {
   const panel = visualsOscForm.closest("details");
   if (panel) panel.open = true;
   if (!visualsOscForm.children.length && appSettings) renderVisualsOscForm();
-  setActiveVisualOscSection("buttons");
+  setActiveVisualOscSection(isVisualOffItem(item, clip) ? "off" : "buttons");
 
   const address = getVisualOscAddressInput(item.id);
   if (!address) {
@@ -2145,19 +2336,25 @@ function createVisualClipButton(item, layer, clip, options = {}) {
   const isOverview = options.variant === "overview";
   const staged = options.staged || "";
   const selected = options.selected || "";
-  const isActive = Boolean(item && selected === item.id);
+  const selectedByLayer = options.selectedByLayer || {};
+  const isOff = isVisualOffItem(item, clip);
+  const selectedForLayer = selectedByLayer[String(layer)] || "";
+  const isActive = Boolean(item && (selectedForLayer ? selectedForLayer === item.id : selected === item.id));
   const isPreview = Boolean(item && staged === item.id);
   const button = document.createElement("button");
   button.type = "button";
   button.className = isOverview
     ? "overview-cue-button visual-cue visual-clip-button"
     : "visual-button visual-clip-button";
+  button.classList.toggle("visual-off-button", isOff);
   button.classList.toggle("active", isActive);
   button.classList.toggle("preview", isPreview);
   button.disabled = !item;
   button.ariaPressed = String(isPreview || isActive);
-  button.ariaLabel = item ? `Trigger Layer ${layer} Clip ${clip}; edit OSC address from context menu or long press` : `Layer ${layer} Clip ${clip} unavailable`;
-  button.title = item ? visualClipTitle(item, layer, clip, isPreview) : `Layer ${layer} Clip ${clip}`;
+  button.ariaLabel = item
+    ? `${isOff ? "Turn off" : "Trigger"} Layer ${layer}${isOff ? " clips" : ` Clip ${clip}`}; edit OSC address from context menu or long press`
+    : `Layer ${layer} ${isOff ? "off" : `Clip ${clip}`} unavailable`;
+  button.title = item ? visualClipTitle(item, layer, clip, isPreview) : `Layer ${layer} ${isOff ? "Off" : `Clip ${clip}`}`;
   button.textContent = visualClipButtonLabel(item, layer, clip);
   if (item) {
     button.dataset.visualId = item.id;
@@ -2187,6 +2384,9 @@ function renderVisualLayerGrid(container, items, options = {}) {
   const corner = document.createElement("span");
   corner.textContent = "Clip";
   ruler.append(corner);
+  const offColumn = document.createElement("span");
+  offColumn.textContent = "X";
+  ruler.append(offColumn);
   for (let clip = 1; clip <= VISUAL_CLIPS_PER_LAYER; clip += 1) {
     const column = document.createElement("span");
     column.textContent = String(clip);
@@ -2201,21 +2401,23 @@ function renderVisualLayerGrid(container, items, options = {}) {
     label.className = "visual-layer-label";
     label.textContent = `Layer ${layer}`;
     row.append(label);
+    row.append(createVisualClipButton(byLayer.get(`${layer}:0`), layer, 0, options));
     for (let clip = 1; clip <= VISUAL_CLIPS_PER_LAYER; clip += 1) {
       row.append(createVisualClipButton(byLayer.get(`${layer}:${clip}`), layer, clip, options));
     }
     container.append(row);
   }
 }
+
 function renderOverviewVisuals() {
   if (!overviewVisualGrid || !appSettings) return;
-  renderVisualLayerGrid(overviewVisualGrid, appSettings.visual_controls || [], {
+  renderVisualLayerGrid(overviewVisualGrid, visualControlsWithLayerOff(), {
     variant: "overview",
     selected: latestShow?.last_visual_button || "",
+    selectedByLayer: selectedVisualByLayer(latestShow),
     staged: stagedPerformanceCue.visual_id || "",
   });
 }
-
 function renderOverviewGenerator() {
   if (!overviewGeneratorGrid || !appSettings) return;
   overviewGeneratorGrid.replaceChildren();
@@ -2653,6 +2855,131 @@ function renderOverviewSequence() {
   overviewSequenceTransport.append(banks, summary, controls, renderOverviewCueStack(steps), cueGrid);
 }
 
+function boolStatus(value, onLabel, offLabel, unknownLabel = "Unknown") {
+  if (value === true) return onLabel;
+  if (value === false) return offLabel;
+  return unknownLabel;
+}
+
+function obsStatusText(obs = {}) {
+  const recording = obs.recording === true
+    ? obs.record_paused === true ? "Recording paused" : "Recording"
+    : obs.recording === false ? "Record idle" : "Record unknown";
+  const streaming = boolStatus(obs.streaming, "Streaming", "Stream idle", "Stream unknown");
+  const replay = boolStatus(obs.replay_buffer, "Replay on", "Replay off", "Replay unknown");
+  const virtualCam = boolStatus(obs.virtual_cam, "Virtual cam on", "Virtual cam off", "VCam unknown");
+  const studio = boolStatus(obs.studio_mode, "Studio on", "Studio off", "Studio unknown");
+  return `${recording} / ${streaming} / ${replay} / ${virtualCam} / ${studio}`;
+}
+
+function makeObsButton(text, command, tone, enabled) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = text;
+  button.className = `overview-obs-button ${tone || "status"}`;
+  button.disabled = !enabled;
+  button.addEventListener("click", () => sendCommand({ command }));
+  return button;
+}
+
+function makeObsGroup(title, items, enabled) {
+  const group = document.createElement("div");
+  group.className = "obs-control-group";
+  const heading = document.createElement("div");
+  heading.className = "obs-control-group-title";
+  heading.textContent = title;
+  const grid = document.createElement("div");
+  grid.className = "overview-obs-button-grid";
+  items.forEach(([text, command, tone]) => grid.append(makeObsButton(text, command, tone, enabled)));
+  group.append(heading, grid);
+  return group;
+}
+
+function renderObsControlsInto(container, show = latestShow) {
+  if (!container) return;
+  container.replaceChildren();
+  const enabled = Boolean(appSettings?.obs_enabled);
+  const fullPage = container === obsSectionControls;
+  const obs = show?.obs || appSettings?.obs_status || {};
+  const status = document.createElement("div");
+  status.className = enabled ? "overview-obs-status enabled" : "overview-obs-status";
+  const label = document.createElement("span");
+  label.textContent = enabled ? "OBS WebSocket" : "OBS disabled";
+  const message = document.createElement("strong");
+  message.textContent = enabled ? obsStatusText(obs) : "Enable in Settings";
+  status.append(label, message);
+
+  const groups = document.createElement("div");
+  groups.className = fullPage ? "obs-control-groups full" : "obs-control-groups compact";
+  if (fullPage) {
+    groups.append(
+      makeObsGroup("Recording", [
+        ["Start", "obs_record_start", "record"],
+        ["Stop", "obs_record_stop", "danger"],
+      ], enabled),
+      makeObsGroup("Streaming", [
+        ["Start", "obs_stream_start", "stream"],
+        ["Stop", "obs_stream_stop", "danger"],
+      ], enabled),
+      makeObsGroup("Utilities", [
+        ["Refresh", "obs_refresh_status", "status"],
+        ["Version", "obs_version", "utility"],
+        ["Stats", "obs_stats", "utility"],
+        ["Studio Mode", "obs_studio_toggle", "utility"],
+        ["Studio Cut", "obs_studio_transition", "utility"],
+      ], enabled)
+    );
+  } else {
+    groups.append(makeObsGroup("OBS", [
+      ["Refresh", "obs_refresh_status", "status"],
+      ["Start Rec", "obs_record_start", "record"],
+      ["Stop Rec", "obs_record_stop", "danger"],
+      ["Rec Status", "obs_record_status", "status"],
+      ["Start Stream", "obs_stream_start", "stream"],
+      ["Stop Stream", "obs_stream_stop", "danger"],
+    ], enabled));
+  }
+
+  const hint = document.createElement("p");
+  hint.className = "muted overview-obs-hint";
+  const errors = obs.errors && Object.keys(obs.errors).length ? ` Status notes: ${Object.keys(obs.errors).join(", ")}.` : "";
+  hint.textContent = enabled
+    ? `${obs.message || `Target ${appSettings?.obs_host || "127.0.0.1"}:${appSettings?.obs_port || 4455}`}${errors}`
+    : "OBS control will use OBS WebSocket on the show PC.";
+  container.append(status, groups, hint);
+}
+function renderOverviewObsControls(show = latestShow) {
+  renderObsControlsInto(overviewObsControls, show);
+  renderObsControlsInto(obsSectionControls, show);
+}
+
+function renderOverviewMacros() {
+  if (!overviewMacroButtons) return;
+  overviewMacroButtons.replaceChildren();
+  ["OSC", "Hotkey", "Webhook", "Script"].forEach((label) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.disabled = true;
+    button.textContent = label;
+    overviewMacroButtons.append(button);
+  });
+}
+
+function renderSpotifyStatus(status = null) {
+  if (!spotifyAuthStatus) return;
+  const enabled = Boolean(appSettings?.spotify_enabled);
+  const ready = Boolean(appSettings?.spotify_auth_ready);
+  const mode = status?.show?.manual_mode || latestShow?.manual_mode || "cdj";
+  if (!enabled) {
+    spotifyAuthStatus.textContent = "Disabled";
+  } else if (!ready) {
+    spotifyAuthStatus.textContent = "Needs Client ID";
+  } else if (mode === "spotify") {
+    spotifyAuthStatus.textContent = "Spotify display active";
+  } else {
+    spotifyAuthStatus.textContent = "Ready for login build";
+  }
+}
 function resizeLiveDeckCards() {
   if (!liveDeckGrid) return;
   liveDeckPanelCards.forEach((card) => {
@@ -2672,24 +2999,30 @@ function renderLiveDeck(show) {
   const names = Object.keys(presetData?.groups?.performance || {});
   renderActiveMomentStrip(show);
   renderLiveDeckLookCapture(show);
+  renderOverviewNowPlaying({ show, blt: {}, artwork: {} });
   renderOverviewLooks(names);
   renderOverviewLightState(show);
   renderOverviewLightControls();
   renderOverviewBpmControls(show);
   renderOverviewVisuals();
-  renderOverviewGenerator();
   renderOverviewCameras();
   renderCueRouteControls();
   renderOverviewSequence();
+  renderOverviewObsControls(show);
+  renderOverviewMacros();
+  renderOverviewGenerator();
   scheduleLiveDeckResize();
 }
 
-function activePerformanceName() {
-  if (latestShow?.source?.startsWith("performance:")) return latestShow.source.slice("performance:".length).split("+")[0];
-  if (!lookApplyLights() && latestShow?.active_look_name) return latestShow.active_look_name;
+function confirmedPerformanceName(show = latestShow) {
+  if (show?.source?.startsWith("performance:")) return show.source.slice("performance:".length).split("+")[0];
+  if (!lookApplyLights() && show?.active_look_name) return show.active_look_name;
   return "";
 }
 
+function activePerformanceName() {
+  return optimisticPerformanceLookName || confirmedPerformanceName(latestShow);
+}
 function reapplyActivePerformanceLook() {
   const name = activePerformanceName() || saveCurrentLookSelect?.value || "Look 1";
   sendCommand(linkedLookPayload(name));
@@ -3255,6 +3588,8 @@ function renderShowState(show, options = {}) {
   const signature = JSON.stringify(show);
   const changed = signature !== latestShowSignature;
   latestShow = show;
+  if (optimisticPerformanceLookName && confirmedPerformanceName(show) === optimisticPerformanceLookName) optimisticPerformanceLookName = "";
+  if (optimisticNowPlayingMode && show.manual_mode) optimisticNowPlayingMode = "";
   selectedDivision = show.bpm_division || selectedDivision;
   setBpmUiValue(show.bpm || bpmInput.value);
   bpmStatus.textContent = formatBpmStatus(show);
@@ -3306,6 +3641,7 @@ function manualModeText(mode) {
   if (mode === "vinyl") return appSettings?.vinyl_track_text || "Record Playing";
   if (mode === "studio") return appSettings?.studio_track_text || "NO TALKING STUDIO";
   if (mode === "videogame") return appSettings?.videogame_track_text || "Ravenswatch";
+  if (mode === "spotify") return appSettings?.spotify_track_text || "Spotify Now Playing";
   return "";
 }
 
@@ -3314,14 +3650,74 @@ function renderManualModeForm() {
   if (vinylModeButtonText) vinylModeButtonText.textContent = manualModeText("vinyl");
   if (studioModeButtonText) studioModeButtonText.textContent = manualModeText("studio");
   if (videogameModeButtonText) videogameModeButtonText.textContent = "Videogames";
-  if (!manualModeForm || manualModeDirty || manualModeForm.contains(document.activeElement)) return;
-  if (vinylTrackText) vinylTrackText.value = appSettings.vinyl_track_text || "Record Playing";
-  if (studioTrackText) studioTrackText.value = appSettings.studio_track_text || "NO TALKING STUDIO";
-  if (videogameTrackText) videogameTrackText.value = appSettings.videogame_track_text || "Ravenswatch";
+  if (manualModeDirty) return;
+  if (manualModeForm && !manualModeForm.contains(document.activeElement)) {
+    if (vinylTrackText) vinylTrackText.value = appSettings.vinyl_track_text || "Record Playing";
+    if (vinylArtworkPath) vinylArtworkPath.value = appSettings.vinyl_logo_path || "";
+    if (vinylArtworkWidth) vinylArtworkWidth.value = appSettings.vinyl_artwork_width || "";
+    if (vinylArtworkHeight) vinylArtworkHeight.value = appSettings.vinyl_artwork_height || "";
+    if (studioTrackText) studioTrackText.value = appSettings.studio_track_text || "NO TALKING STUDIO";
+    if (studioArtworkPath) studioArtworkPath.value = appSettings.studio_artwork_path || "";
+    if (studioArtworkWidth) studioArtworkWidth.value = appSettings.studio_artwork_width || "";
+    if (studioArtworkHeight) studioArtworkHeight.value = appSettings.studio_artwork_height || "";
+    if (videogameTrackText) videogameTrackText.value = appSettings.videogame_track_text || "Ravenswatch";
+    if (videogameArtworkPath) videogameArtworkPath.value = appSettings.videogame_artwork_path || "";
+    if (videogameArtworkWidth) videogameArtworkWidth.value = appSettings.videogame_artwork_width || "";
+    if (videogameArtworkHeight) videogameArtworkHeight.value = appSettings.videogame_artwork_height || "";
+  }
+  if (beatlinkSourceForm && !beatlinkSourceForm.contains(document.activeElement)) {
+    if (beatlinkParamsUrl) beatlinkParamsUrl.value = appSettings.blt_params_url || "";
+    if (musicRoot) musicRoot.value = appSettings.music_root || "";
+    if (artworkOutputPath) artworkOutputPath.value = appSettings.artwork_output || "";
+    if (fallbackArtworkPath) fallbackArtworkPath.value = appSettings.fallback_artwork_path || "";
+    if (defaultFallbackTemplate) defaultFallbackTemplate.value = appSettings.default_fallback_template || "";
+    if (cdjArtworkWidth) cdjArtworkWidth.value = appSettings.cdj_artwork_width || "";
+    if (cdjArtworkHeight) cdjArtworkHeight.value = appSettings.cdj_artwork_height || "";
+    if (fallbackArtworkWidth) fallbackArtworkWidth.value = appSettings.fallback_artwork_width || "";
+    if (fallbackArtworkHeight) fallbackArtworkHeight.value = appSettings.fallback_artwork_height || "";
+  }
+  if (spotifySourceForm && !spotifySourceForm.contains(document.activeElement)) {
+    if (spotifyEnabled) spotifyEnabled.checked = Boolean(appSettings.spotify_enabled);
+    if (spotifyTrackText) spotifyTrackText.value = appSettings.spotify_track_text || "Spotify Now Playing";
+    if (spotifyArtworkPath) spotifyArtworkPath.value = appSettings.spotify_artwork_path || "";
+    if (spotifyArtworkWidth) spotifyArtworkWidth.value = appSettings.spotify_artwork_width || "";
+    if (spotifyArtworkHeight) spotifyArtworkHeight.value = appSettings.spotify_artwork_height || "";
+    if (spotifyClientId) spotifyClientId.value = appSettings.spotify_client_id || "";
+    if (spotifyRedirectUri) spotifyRedirectUri.value = appSettings.spotify_redirect_uri || "http://127.0.0.1:8080/spotify/callback";
+    if (spotifyMarket) spotifyMarket.value = appSettings.spotify_market || "US";
+  }
 }
+
+function nowPlayingModeForCommand(command) {
+  if (command === "resume" || command === "safe_reset") return "cdj";
+  if (["spotify", "vinyl", "studio", "videogame"].includes(command)) return command;
+  return "cdj";
+}
+
+function nowPlayingSourceForMode(mode) {
+  if (mode === "spotify") return "spotify";
+  if (mode === "vinyl" || mode === "studio" || mode === "videogame") return "manual";
+  return "beatlink";
+}
+
+function renderNowPlayingSourceTabs(show = latestShow) {
+  const mode = optimisticNowPlayingMode || show?.manual_mode || "cdj";
+  const source = activeNowPlayingSource || nowPlayingSourceForMode(mode);
+  const labels = { beatlink: "BeatLink Settings", spotify: "Spotify Settings", manual: "Manual Settings" };
+  if (nowPlayingSourceStatus) nowPlayingSourceStatus.textContent = `Live: ${nowPlayingModeLabel(mode)}`;
+  if (nowPlayingSettingsLabel) nowPlayingSettingsLabel.textContent = labels[source] || "Now Playing Settings";
+  document.querySelectorAll("[data-now-playing-source]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.nowPlayingSource === source);
+  });
+  document.querySelectorAll("[data-now-playing-panel]").forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.nowPlayingPanel === source);
+  });
+}
+
 function renderSelectedButtons(show) {
   renderManualModeForm();
-  const mode = show?.manual_mode || "cdj";
+  renderNowPlayingSourceTabs(show);
+  const mode = optimisticNowPlayingMode || show?.manual_mode || "cdj";
   renderNowPlayingOpacityControl(nowPlayingOpacityControl);
   manualModeButtons.forEach((button) => {
     const command = button.dataset.command;
@@ -3329,6 +3725,7 @@ function renderSelectedButtons(show) {
       (mode === "vinyl" && command === "vinyl") ||
       (mode === "studio" && command === "studio") ||
       (mode === "videogame" && command === "videogame") ||
+      (mode === "spotify" && command === "spotify") ||
       (mode === "cdj" && command === "resume");
     button.classList.toggle("active", active);
   });
@@ -3416,6 +3813,7 @@ function renderTrackMetadata(status) {
   trackDailyLog.textContent = hasTrack ? "Polling BeatLink params.json for live metadata." : isCdjMode ? "Waiting for live BeatLink metadata." : "Manual mode sends the configured text and artwork.";
   trackColorComment.textContent = show.color_comment || "-";
   renderOverviewNowPlaying(status);
+  renderSpotifyStatus(status);
 }
 
 function outputByKey(key) {
@@ -3544,8 +3942,10 @@ function renderLinkControls() {
       button.className = "light-color-option";
       button.classList.toggle("active", colorName === optionName);
       button.style.setProperty("--option-color", colorHex(optionName));
-      button.title = `${lightColorControlLabel(control)} ${displayColorName(optionName)}`;
-      button.setAttribute("aria-label", `Set ${lightColorControlLabel(control)} to ${displayColorName(optionName)}`);
+      button.title = `${lightColorControlLabel(control)} ${colorHueLabel(optionName)}`;
+      button.setAttribute("aria-label", `Set ${lightColorControlLabel(control)} to ${colorHueLabel(optionName)}`);
+      const hueDegree = colorHueDegree(optionName);
+      if (hueDegree !== null) button.dataset.hueDegree = String(hueDegree);
       const swatch = document.createElement("i");
       const label = document.createElement("span");
       label.textContent = displayColorName(optionName);
@@ -3821,9 +4221,10 @@ function renderVisualControls() {
   renderVisualOpacityControl();
   renderNowPlayingOpacityControl(visualNowPlayingOpacityControl);
   renderGenerativeVisualControls();
-  renderVisualLayerGrid(visualControls, appSettings.visual_controls || [], {
+  renderVisualLayerGrid(visualControls, visualControlsWithLayerOff(), {
     variant: "full",
     selected: latestShow?.last_visual_button || "",
+    selectedByLayer: selectedVisualByLayer(latestShow),
     staged: isPreviewCueDispatch() ? stagedPerformanceCue.visual_id : "",
   });
 }
@@ -4363,6 +4764,7 @@ async function triggerMathScene(sceneId, mode = "trigger") {
       renderLookLinkForm();
       renderLocalOscForms();
       renderSettingsForm();
+      renderObsSettingsForm();
     }
     if (result.state) renderShowState(result.state);
     const message = result.message || "Math scene updated";
@@ -4617,7 +5019,7 @@ function makeBuilderSelect(_name, labelText, select) {
   return label;
 }
 
-function makeField(key, labelText, kind) {
+function makeField(key, labelText, kind, onDirty = markSettingsDirty) {
   const label = document.createElement("label");
   label.className = "field";
   const span = document.createElement("span");
@@ -4657,7 +5059,7 @@ function makeField(key, labelText, kind) {
     input.type = "checkbox";
   } else {
     input = document.createElement("input");
-    input.type = kind === "number" ? "number" : "text";
+    input.type = kind === "number" ? "number" : kind === "password" ? "password" : "text";
   }
 
   input.name = key;
@@ -4672,13 +5074,9 @@ function makeField(key, labelText, kind) {
   } else {
     input.value = appSettings[key] ?? "";
   }
-  input.addEventListener("input", () => {
-    settingsDirty = true;
-    settingsStatus.textContent = "Unsaved settings changes.";
-  });
+  input.addEventListener("input", onDirty);
   input.addEventListener("change", () => {
-    settingsDirty = true;
-    settingsStatus.textContent = "Unsaved settings changes.";
+    onDirty();
     if (key === "active_connection_profile") applyConnectionProfileToSettings(input.value);
   });
   label.append(input);
@@ -4764,13 +5162,28 @@ function uniqueNetworkAddresses(values) {
   return addresses;
 }
 
-function machineAddresses(machine) {
-  return uniqueNetworkAddresses([
-    machine?.host,
-    ...(Array.isArray(machine?.addresses) ? machine.addresses : []),
-  ]);
+function machineAddressSlots(machine) {
+  const rawSlots = machine?.address_slots || {};
+  const hasNamedSlots = rawSlots && ["main", "host", "wifi", "wifi_host", "ethernet", "ethernet_host"].some((key) => Object.prototype.hasOwnProperty.call(rawSlots, key));
+  if (hasNamedSlots) {
+    return {
+      main: cleanNetworkAddress(rawSlots.main || rawSlots.host || ""),
+      wifi: cleanNetworkAddress(rawSlots.wifi || rawSlots.wifi_host || ""),
+      ethernet: cleanNetworkAddress(rawSlots.ethernet || rawSlots.ethernet_host || ""),
+    };
+  }
+  const rawAddresses = Array.isArray(machine?.addresses) ? machine.addresses : [];
+  return {
+    main: cleanNetworkAddress(machine?.host || rawAddresses[0] || ""),
+    wifi: cleanNetworkAddress(machine?.wifi_host || machine?.wifi || rawAddresses[1] || ""),
+    ethernet: cleanNetworkAddress(machine?.ethernet_host || machine?.ethernet || rawAddresses[2] || ""),
+  };
 }
 
+function machineAddresses(machine) {
+  const slots = machineAddressSlots(machine);
+  return uniqueNetworkAddresses([slots.main, slots.wifi, slots.ethernet]);
+}
 function machinePrimaryHost(machine) {
   return machineAddresses(machine)[0] || cleanNetworkAddress(machine?.host) || "";
 }
@@ -4813,37 +5226,44 @@ function networkMachinesForSettings() {
   return networkMachineSlots.map((slot) => {
     const configuredMachine = configuredById.get(slot.id) || {};
     const fallbackHost = slot.id === "pc" ? remoteGuess : slot.host;
-    const addresses = uniqueNetworkAddresses([
-      configuredMachine.host,
-      ...(Array.isArray(configuredMachine.addresses) ? configuredMachine.addresses : []),
-      fallbackHost,
-    ]);
+    const slots = machineAddressSlots(configuredMachine);
+    if (!slots.main && !slots.wifi && !slots.ethernet && fallbackHost) slots.main = cleanNetworkAddress(fallbackHost);
+    const addresses = uniqueNetworkAddresses([slots.main, slots.wifi, slots.ethernet]);
     return {
       id: slot.id,
       label: configuredMachine.label || slot.label,
-      host: addresses[0] || "",
+      host: slots.main || addresses[0] || "",
+      wifi_host: slots.wifi,
+      ethernet_host: slots.ethernet,
+      address_slots: slots,
       addresses,
+      addressValues: [slots.main, slots.wifi, slots.ethernet],
       placeholders: slot.placeholders,
     };
   });
 }
-
 function networkMachineRows() {
   return [...settingsForm.querySelectorAll(".network-machine-row")].map((row) => {
-    const addresses = uniqueNetworkAddresses(
-      [...row.querySelectorAll("[data-network-address]")]
-        .sort((a, b) => Number(a.dataset.networkAddress || 0) - Number(b.dataset.networkAddress || 0))
-        .map((input) => input.value),
-    );
+    const fields = [...row.querySelectorAll("[data-network-address]")]
+      .sort((a, b) => Number(a.dataset.networkAddress || 0) - Number(b.dataset.networkAddress || 0));
+    const addressValues = fields.map((input) => cleanNetworkAddress(input.value));
+    const addressSlots = {
+      main: addressValues[0] || "",
+      wifi: addressValues[1] || "",
+      ethernet: addressValues[2] || "",
+    };
+    const addresses = uniqueNetworkAddresses([addressSlots.main, addressSlots.wifi, addressSlots.ethernet]);
     return {
       id: row.dataset.machineId,
       label: row.querySelector("[data-network-field='label']")?.value || row.dataset.machineId,
-      host: addresses[0] || "",
+      host: addressSlots.main || addresses[0] || "",
+      wifi_host: addressSlots.wifi,
+      ethernet_host: addressSlots.ethernet,
+      address_slots: addressSlots,
       addresses,
     };
   });
 }
-
 function machineById(machines, id) {
   return machines.find((machine) => machine.id === id) || machines[0] || { id: "laptop", label: "Laptop", host: "127.0.0.1", addresses: ["127.0.0.1"] };
 }
@@ -4982,7 +5402,7 @@ function makeSimpleNetworkPanel() {
       slot.textContent = slotLabel;
       const input = document.createElement("input");
       input.type = "text";
-      input.value = machine.addresses[addressIndex] || "";
+      input.value = machine.addressValues?.[addressIndex] || machine.addresses[addressIndex] || "";
       input.placeholder = machine.placeholders?.[addressIndex] || "192.168.1.x";
       input.dataset.networkAddress = String(addressIndex);
       input.addEventListener("input", markSettingsDirty);
@@ -5150,7 +5570,7 @@ function collectOscTargetsPayload() {
   return { osc_targets: targets };
 }
 function renderSettingsForm() {
-  if (!appSettings || settingsDirty || settingsForm.contains(document.activeElement)) return;
+  if (!appSettings || !settingsForm || settingsDirty || settingsForm.contains(document.activeElement)) return;
   settingsForm.replaceChildren();
   for (const group of settingGroups) {
     const fieldset = document.createElement("fieldset");
@@ -5166,6 +5586,24 @@ function renderSettingsForm() {
     }
     settingsForm.append(fieldset);
   }
+}
+
+function markObsSettingsDirty() {
+  obsSettingsDirty = true;
+  if (obsSettingsStatus) obsSettingsStatus.textContent = "Unsaved OBS settings.";
+}
+
+function renderObsSettingsForm() {
+  if (!appSettings || !obsSettingsForm || obsSettingsDirty || obsSettingsForm.contains(document.activeElement)) return;
+  obsSettingsForm.replaceChildren();
+  const fieldset = document.createElement("fieldset");
+  const legend = document.createElement("legend");
+  legend.textContent = "OBS WebSocket";
+  fieldset.append(legend);
+  for (const [key, label, kind] of obsSettingFields) {
+    fieldset.append(makeField(key, label, kind, markObsSettingsDirty));
+  }
+  obsSettingsForm.append(fieldset);
 }
 
 function makeLocalTextField(name, labelText, value, onDirty, placeholder = "") {
@@ -5348,6 +5786,53 @@ function makeBuilderTextControl(text, selected) {
   return { label, input };
 }
 
+function lightOscSectionForControl(control) {
+  if (LIVE_LIGHT_COLOR_KEYS.includes(control?.key)) return control.key;
+  return "sliders";
+}
+
+function makeLightOscFilters() {
+  const filters = document.createElement("div");
+  filters.className = "osc-filter-tabs light-osc-filter-tabs";
+  for (const [key, label] of LIGHT_OSC_FILTERS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "osc-filter-button";
+    button.dataset.lightOscSection = key;
+    button.textContent = label;
+    button.addEventListener("click", () => setActiveLightOscSection(key));
+    filters.append(button);
+  }
+  return filters;
+}
+
+function setActiveLightOscSection(key) {
+  activeLightOscSection = key;
+  document.querySelectorAll("[data-light-osc-section].osc-filter-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.lightOscSection === key);
+  });
+  document.querySelectorAll(".light-osc-section").forEach((section) => {
+    const show = key === "all" || section.dataset.lightOscSection === key;
+    section.classList.toggle("active", show);
+  });
+}
+
+function makeBpmTimingOscSection(onDirty) {
+  const fieldset = document.createElement("fieldset");
+  fieldset.className = "wide-fieldset light-osc-section bpm-timing-osc-section";
+  fieldset.dataset.lightOscSection = "timing";
+  const legend = document.createElement("legend");
+  legend.textContent = "BPM Timing OSC Outputs";
+  fieldset.append(legend);
+
+  const grid = document.createElement("div");
+  grid.className = "bpm-timing-osc-grid";
+  for (const [key, label, placeholder] of BPM_TIMING_OSC_FIELDS) {
+    grid.append(makeLocalTextField(key, label, appSettings[key] || "", onDirty, placeholder));
+  }
+  fieldset.append(grid);
+  return fieldset;
+}
 function renderLightsOscForm() {
   if (!appSettings || !lightsOscForm || lightsOscDirty || lightsOscForm.contains(document.activeElement)) return;
   lightsOscForm.replaceChildren();
@@ -5355,13 +5840,16 @@ function renderLightsOscForm() {
     lightsOscDirty = true;
     lightsOscStatus.textContent = "Unsaved Lights OSC changes.";
   };
+  lightsOscForm.append(makeLightOscFilters());
   const fieldset = document.createElement("fieldset");
+  fieldset.className = "wide-fieldset light-osc-control-fieldset";
   const legend = document.createElement("legend");
   legend.textContent = "Light Control OSC Outputs";
   fieldset.append(legend);
   for (const control of liveLightControls()) {
     const group = document.createElement("div");
-    group.className = "light-osc-control-group";
+    group.className = "light-osc-control-group light-osc-section";
+    group.dataset.lightOscSection = lightOscSectionForControl(control);
 
     const heading = document.createElement("div");
     heading.className = "light-osc-control-heading";
@@ -5391,6 +5879,8 @@ function renderLightsOscForm() {
     fieldset.append(group);
   }
   lightsOscForm.append(fieldset);
+  lightsOscForm.append(makeBpmTimingOscSection(markDirty));
+  setActiveLightOscSection(activeLightOscSection);
 }
 function renderNowPlayingOscForm() {
   if (!appSettings || !nowPlayingOscForm || nowPlayingOscDirty || nowPlayingOscForm.contains(document.activeElement)) return;
@@ -5458,7 +5948,8 @@ function renderVisualsOscForm() {
   const filters = document.createElement("div");
   filters.className = "osc-filter-tabs";
   [
-    ["buttons", "Visual Buttons"],
+    ["off", "Layer X / Off"],
+    ["buttons", "Clip Buttons"],
     ["sliders", "Visual Sliders"],
     ["all", "All"],
   ].forEach(([key, label]) => {
@@ -5472,20 +5963,29 @@ function renderVisualsOscForm() {
   });
   visualsOscForm.append(filters);
 
-  const fieldset = document.createElement("fieldset");
-  fieldset.className = "wide-fieldset visual-osc-section";
-  fieldset.dataset.visualOscSection = "buttons";
-  const legend = document.createElement("legend");
-  legend.textContent = "Visual Button OSC Addresses";
-  fieldset.append(legend);
-  const header = document.createElement("div");
-  header.className = "visual-setting-row visual-setting-header";
-  header.innerHTML = "<span>Button Label</span><span>OSC Address</span>";
-  fieldset.append(header);
-  for (const item of appSettings.visual_controls || []) {
-    fieldset.append(makeVisualSettingRow(item, markDirty));
-  }
-  visualsOscForm.append(fieldset);
+  const controls = visualControlsWithLayerOff();
+  const offControls = controls.filter((item) => isVisualOffItem(item));
+  const clipControls = controls.filter((item) => !isVisualOffItem(item));
+
+  const makeButtonFieldset = (sectionKey, legendText, items, headerLabel) => {
+    const fieldset = document.createElement("fieldset");
+    fieldset.className = "wide-fieldset visual-osc-section";
+    fieldset.dataset.visualOscSection = sectionKey;
+    const legend = document.createElement("legend");
+    legend.textContent = legendText;
+    fieldset.append(legend);
+    const header = document.createElement("div");
+    header.className = "visual-setting-row visual-setting-header";
+    header.innerHTML = `<span>${headerLabel}</span><span>OSC Address</span>`;
+    fieldset.append(header);
+    for (const item of items) {
+      fieldset.append(makeVisualSettingRow(item, markDirty));
+    }
+    return fieldset;
+  };
+
+  visualsOscForm.append(makeButtonFieldset("off", "Layer Off / X Button OSC Addresses", offControls, "X Button Label"));
+  visualsOscForm.append(makeButtonFieldset("buttons", "Visual Clip OSC Addresses", clipControls, "Clip Button Label"));
 
   const sliderFieldset = document.createElement("fieldset");
   sliderFieldset.className = "wide-fieldset visual-osc-section";
@@ -5503,14 +6003,14 @@ function renderVisualsOscForm() {
   visualsOscForm.append(sliderFieldset);
   setActiveVisualOscSection(activeVisualOscSection);
 }
-
 function setActiveVisualOscSection(key) {
-  activeVisualOscSection = key;
+  const validKeys = new Set(["off", "buttons", "sliders", "all"]);
+  activeVisualOscSection = validKeys.has(key) ? key : "off";
   document.querySelectorAll("[data-visual-osc-section].osc-filter-button").forEach((button) => {
-    button.classList.toggle("active", button.dataset.visualOscSection === key);
+    button.classList.toggle("active", button.dataset.visualOscSection === activeVisualOscSection);
   });
   document.querySelectorAll(".visual-osc-section").forEach((section) => {
-    const show = key === "all" || section.dataset.visualOscSection === key;
+    const show = activeVisualOscSection === "all" || section.dataset.visualOscSection === activeVisualOscSection;
     section.classList.toggle("active", show);
   });
 }
@@ -6334,6 +6834,7 @@ async function saveLookLightsMode(enabled) {
     renderLookLightsModeControls();
     renderQuickSettingsForm();
     renderSettingsForm();
+      renderObsSettingsForm();
     refreshLookDispatchSurfaces();
     showToast(enabled ? "Look lights on" : "Look lights held");
   } catch (error) {
@@ -6484,6 +6985,7 @@ async function saveQuickSettingsPayload() {
     if (result.state) renderShowState(result.state);
     renderQuickSettingsForm();
     renderSettingsForm();
+      renderObsSettingsForm();
     renderLocalOscForms();
     await loadStatus();
   } catch (error) {
@@ -6589,7 +7091,9 @@ function makeCameraSettingRow(kind, item, onDirty = markSettingsDirty) {
 function makeVisualSettingRow(item, onDirty = markSettingsDirty) {
   const row = document.createElement("div");
   row.className = "visual-setting-row";
+  row.classList.toggle("visual-off-setting-row", isVisualOffItem(item));
   row.dataset.visualControlId = item.id;
+  row.dataset.visualKind = isVisualOffItem(item) ? "off" : "clip";
   const label = document.createElement("input");
   label.name = `visual_label_${item.id}`;
   label.value = item.label || item.name || item.id;
@@ -6598,7 +7102,7 @@ function makeVisualSettingRow(item, onDirty = markSettingsDirty) {
   const address = document.createElement("input");
   address.name = `visual_address_${item.id}`;
   address.value = item.address || "";
-  address.placeholder = "/composition/groups/.../columns/.../connect";
+  address.placeholder = isVisualOffItem(item) ? "/composition/layers/.../clear" : "/composition/groups/.../columns/.../connect";
   address.dataset.visualAddressId = item.id;
 
   label.addEventListener("input", () => updateVisualControlDraft(item.id, { name: label.value, label: label.value }));
@@ -6615,7 +7119,6 @@ function makeVisualSettingRow(item, onDirty = markSettingsDirty) {
   row.append(label, addressCell);
   return row;
 }
-
 function makeVisualSliderSettingRow(item, onDirty = markSettingsDirty) {
   const row = document.createElement("div");
   row.className = "visual-slider-setting-row";
@@ -6993,21 +7496,65 @@ function collectLightsOscPayload() {
       if (index > 0) payload.osc_extra_addresses[String(control.link)].push(data.get(`extra_address_${control.link}_${index - 1}`) || "");
     }
   }
+  for (const [key] of BPM_TIMING_OSC_FIELDS) {
+    payload[key] = data.get(key) || "";
+  }
   return payload;
 }
 
+function cleanOscAddressValue(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return text.startsWith("/") ? text : `/${text}`;
+}
+
+function findUnsavedBpmTimingOscKeys(payload, config) {
+  if (!payload || !config) return [];
+  return BPM_TIMING_OSC_FIELDS
+    .map(([key, label]) => [key, label, cleanOscAddressValue(payload[key]), cleanOscAddressValue(config[key])])
+    .filter(([_key, _label, posted, returned]) => posted && posted !== returned)
+    .map(([_key, label]) => label);
+}
 function collectManualModePayload() {
   return {
+    blt_params_url: beatlinkParamsUrl?.value || "",
+    music_root: musicRoot?.value || "",
+    artwork_output: artworkOutputPath?.value || "",
+    fallback_artwork_path: fallbackArtworkPath?.value || "",
+    default_fallback_template: defaultFallbackTemplate?.value || "",
+    cdj_artwork_width: cdjArtworkWidth?.value || "",
+    cdj_artwork_height: cdjArtworkHeight?.value || "",
+    fallback_artwork_width: fallbackArtworkWidth?.value || "",
+    fallback_artwork_height: fallbackArtworkHeight?.value || "",
+    spotify_enabled: Boolean(spotifyEnabled?.checked),
+    spotify_track_text: spotifyTrackText?.value || "Spotify Now Playing",
+    spotify_artwork_path: spotifyArtworkPath?.value || "",
+    spotify_artwork_width: spotifyArtworkWidth?.value || "",
+    spotify_artwork_height: spotifyArtworkHeight?.value || "",
+    spotify_client_id: spotifyClientId?.value || "",
+    spotify_redirect_uri: spotifyRedirectUri?.value || "http://127.0.0.1:8080/spotify/callback",
+    spotify_market: spotifyMarket?.value || "US",
     vinyl_track_text: vinylTrackText?.value || "Record Playing",
+    vinyl_logo_path: vinylArtworkPath?.value || "",
+    vinyl_artwork_width: vinylArtworkWidth?.value || "",
+    vinyl_artwork_height: vinylArtworkHeight?.value || "",
     studio_track_text: studioTrackText?.value || "NO TALKING STUDIO",
+    studio_artwork_path: studioArtworkPath?.value || "",
+    studio_artwork_width: studioArtworkWidth?.value || "",
+    studio_artwork_height: studioArtworkHeight?.value || "",
     videogame_track_text: videogameTrackText?.value || "Ravenswatch",
+    videogame_artwork_path: videogameArtworkPath?.value || "",
+    videogame_artwork_width: videogameArtworkWidth?.value || "",
+    videogame_artwork_height: videogameArtworkHeight?.value || "",
   };
 }
 
 async function saveManualModePayload() {
   if (!manualModeForm) return;
   try {
-    if (manualModeStatus) manualModeStatus.textContent = "Saving manual mode text...";
+    if (manualModeStatus) manualModeStatus.textContent = "Saving Now Playing source settings...";
+    if (beatlinkSourceStatus) beatlinkSourceStatus.textContent = "Saving BeatLink settings...";
+    if (spotifyAuthStatus) spotifyAuthStatus.textContent = "Saving Spotify settings...";
     const response = await fetch("/api/config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -7018,10 +7565,13 @@ async function saveManualModePayload() {
     appSettings = result.config;
     presetData = result.config.preset_groups || presetData;
     manualModeDirty = false;
-    if (manualModeStatus) manualModeStatus.textContent = result.message || "Manual mode text saved.";
+    if (manualModeStatus) manualModeStatus.textContent = result.message || "Now Playing source settings saved.";
+    if (beatlinkSourceStatus) beatlinkSourceStatus.textContent = "BeatLink settings saved.";
+    if (spotifyAuthStatus) renderSpotifyStatus(result);
     if (result.state) renderShowState(result.state);
     renderManualModeForm();
     renderSettingsForm();
+      renderObsSettingsForm();
     await loadStatus({ full: true, force: true });
   } catch (error) {
     if (manualModeStatus) manualModeStatus.textContent = String(error.message || error);
@@ -7033,12 +7583,35 @@ async function rebuildMusicIndexPayload() {
   const previousText = rebuildMusicIndex.textContent;
   try {
     rebuildMusicIndex.disabled = true;
+    rebuildMusicIndex.textContent = "Saving...";
+    if (manualModeStatus) manualModeStatus.textContent = "Saving BeatLink artwork settings...";
+    const saveResponse = await fetch("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(collectManualModePayload()),
+    });
+    const saveResult = await saveResponse.json();
+    if (!saveResponse.ok || !saveResult.ok) throw new Error(saveResult.message || `HTTP ${saveResponse.status}`);
+    appSettings = saveResult.config;
+    presetData = saveResult.config.preset_groups || presetData;
+    manualModeDirty = false;
+
     rebuildMusicIndex.textContent = "Indexing...";
     if (manualModeStatus) manualModeStatus.textContent = "Scanning Music Root for MP3 files...";
     const result = await sendCommandForResult({ command: "rebuild_music_index" }, { quiet: true });
-    if (manualModeStatus) manualModeStatus.textContent = result.message || "Music index rebuilt.";
+    if (manualModeStatus) manualModeStatus.textContent = result.message || "Music index rebuild started.";
     if (result.state) renderShowState(result.state);
-    await loadStatus({ full: true, force: true });
+
+    for (let attempt = 0; attempt < 45; attempt += 1) {
+      const status = await loadStatus({ full: true, force: true });
+      const rebuild = status?.artwork?.index_rebuild;
+      if (!rebuild?.running) {
+        if (manualModeStatus) manualModeStatus.textContent = rebuild?.message || status?.artwork?.status || "Music index rebuilt.";
+        break;
+      }
+      if (manualModeStatus) manualModeStatus.textContent = rebuild.message || "Rebuilding music index...";
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    }
   } catch (error) {
     if (manualModeStatus) manualModeStatus.textContent = String(error.message || error);
   } finally {
@@ -7066,11 +7639,15 @@ function collectVisualsOscPayload() {
   const data = new FormData(visualsOscForm);
   const payload = { visual_controls: { items: {} }, visual_slider_controls: { items: {} } };
   payload.visual_controls = { items: {} };
-  for (const item of appSettings.visual_controls || []) {
+  for (const item of visualControlsWithLayerOff()) {
     const label = data.get(`visual_label_${item.id}`) || item.label || item.name || item.id;
     payload.visual_controls.items[item.id] = {
+      id: item.id,
       name: label,
       label,
+      kind: item.kind || (isVisualOffItem(item) ? "off" : "clip"),
+      layer: visualLayerNumber(item),
+      clip: visualClipNumber(item),
       address: data.get(`visual_address_${item.id}`),
     };
   }
@@ -7156,6 +7733,7 @@ async function saveSettingsPayload() {
     settingsStatus.textContent = result.message || "Settings saved.";
     if (result.state) renderShowState(result.state);
     renderSettingsForm();
+    renderObsSettingsForm();
     renderLocalOscForms();
     renderPresetEditor();
     await loadStatus();
@@ -7164,15 +7742,53 @@ async function saveSettingsPayload() {
   }
 }
 
-async function saveLocalOscPayload(collectPayload, setDirty, statusEl, successText) {
+function collectObsSettingsPayload() {
+  const data = new FormData(obsSettingsForm);
+  const payload = {};
+  for (const [key, _label, kind] of obsSettingFields) {
+    const field = obsSettingsForm.elements[key];
+    if (!field) continue;
+    payload[key] = kind === "checkbox" ? Boolean(field.checked) : data.get(key);
+  }
+  return payload;
+}
+
+async function saveObsSettingsPayload() {
+  if (!obsSettingsForm) return;
   try {
+    if (obsSettingsStatus) obsSettingsStatus.textContent = "Saving OBS settings...";
     const response = await fetch("/api/config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(collectPayload()),
+      body: JSON.stringify(collectObsSettingsPayload()),
     });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    appSettings = result.config;
+    presetData = result.config.preset_groups || presetData;
+    obsSettingsDirty = false;
+    if (obsSettingsStatus) obsSettingsStatus.textContent = result.message || "OBS settings saved.";
+    if (result.state) renderShowState(result.state);
+    renderObsSettingsForm();
+    await loadStatus({ full: true, force: true });
+  } catch (error) {
+    if (obsSettingsStatus) obsSettingsStatus.textContent = String(error.message || error);
+  }
+}
+async function saveLocalOscPayload(collectPayload, setDirty, statusEl, successText) {
+  try {
+    const payload = collectPayload();
+    const response = await fetch("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    const unsavedBpmTiming = findUnsavedBpmTimingOscKeys(payload, result.config);
+    if (unsavedBpmTiming.length) {
+      throw new Error(`Restart the app server once to enable BPM Timing OSC saving. Not saved yet: ${unsavedBpmTiming.join(", ")}.`);
+    }
     appSettings = result.config;
     presetData = result.config.preset_groups || presetData;
     setDirty(false);
@@ -7180,6 +7796,7 @@ async function saveLocalOscPayload(collectPayload, setDirty, statusEl, successTe
     if (result.state) renderShowState(result.state);
     renderLocalOscForms();
     renderSettingsForm();
+      renderObsSettingsForm();
     refreshCueLabelSurfaces();
     await loadStatus();
   } catch (error) {
@@ -7203,6 +7820,178 @@ function saveNowPlayingOscPayload() {
   return saveLocalOscPayload(collectNowPlayingOscPayload, (value) => { nowPlayingOscDirty = value; }, nowPlayingOscStatus, "Now Playing OSC settings saved.");
 }
 
+function cloneBackupValue(value) {
+  if (value === undefined) return undefined;
+  return JSON.parse(JSON.stringify(value));
+}
+
+function setOscBackupStatus(text) {
+  if (oscBackupStatus) oscBackupStatus.textContent = text;
+}
+
+function collectOscBackupSettings(source = appSettings) {
+  const settings = {};
+  if (!source || typeof source !== "object") return settings;
+  for (const key of OSC_BACKUP_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      settings[key] = cloneBackupValue(source[key]);
+    }
+  }
+  return settings;
+}
+
+function buildOscBackupPayload() {
+  const settings = collectOscBackupSettings();
+  if (!Object.keys(settings).length) throw new Error("OSC settings are not loaded yet. Refresh once, then export again.");
+  return {
+    app: "NT Performance Hub",
+    type: "osc-settings-backup",
+    version: 1,
+    exported_at: new Date().toISOString(),
+    settings,
+  };
+}
+
+function defaultOscBackupFileName() {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  return `nt-performance-hub-osc-settings-${stamp}.json`;
+}
+
+function sanitizeOscBackupFileName(value) {
+  const base = String(value || "").trim().split(/[\\/]/).pop().replace(/[^A-Za-z0-9._ -]+/g, "-").replace(/^[ .]+|[ .]+$/g, "");
+  const name = base || defaultOscBackupFileName();
+  return name.toLowerCase().endsWith(".json") ? name : `${name}.json`;
+}
+
+function oscBackupFileName() {
+  if (!oscBackupFileNameInput) return defaultOscBackupFileName();
+  if (!oscBackupFileNameInput.value.trim()) oscBackupFileNameInput.value = defaultOscBackupFileName();
+  return sanitizeOscBackupFileName(oscBackupFileNameInput.value);
+}
+
+function renderOscBackupFiles(files = []) {
+  if (!oscBackupFileList) return;
+  oscBackupFileList.replaceChildren();
+  files.forEach((file) => {
+    const option = document.createElement("option");
+    option.value = file.filename || "";
+    option.label = file.relative_path || file.filename || "";
+    oscBackupFileList.append(option);
+  });
+  if (oscImportFileNameInput && !oscImportFileNameInput.value && files[0]?.filename) {
+    oscImportFileNameInput.placeholder = files[0].filename;
+  }
+}
+
+async function loadOscBackupFiles() {
+  try {
+    const response = await fetch("/api/osc-backups");
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    renderOscBackupFiles(result.files || []);
+    return result.files || [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+function downloadOscSettingsPayload() {
+  try {
+    const payload = buildOscBackupPayload();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = oscBackupFileName();
+    document.body.append(link);
+    link.click();
+    const objectUrl = link.href;
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+    setOscBackupStatus(`Downloaded ${Object.keys(payload.settings).length} OSC setting groups as ${link.download}.`);
+  } catch (error) {
+    setOscBackupStatus(String(error.message || error));
+  }
+}
+
+async function exportOscSettingsPayload() {
+  try {
+    setOscBackupStatus("Saving OSC backup into project...");
+    const response = await fetch("/api/osc-backup/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: oscBackupFileName() }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    if (oscBackupFileNameInput) oscBackupFileNameInput.value = result.filename || oscBackupFileNameInput.value;
+    if (oscImportFileNameInput) oscImportFileNameInput.value = result.filename || "";
+    renderOscBackupFiles(result.files || []);
+    setOscBackupStatus(`${result.message} (${result.settings_count || 0} setting groups).`);
+  } catch (error) {
+    setOscBackupStatus(String(error.message || error));
+  }
+}
+
+function applyOscImportResult(result, sourceName) {
+  appSettings = result.config;
+  presetData = result.config.preset_groups || presetData;
+  lightsOscDirty = false;
+  visualsOscDirty = false;
+  camerasOscDirty = false;
+  nowPlayingOscDirty = false;
+  lookLinksDirty = false;
+  showSequenceDirty = false;
+  settingsDirty = false;
+  obsSettingsDirty = false;
+  if (result.state) renderShowState(result.state);
+  renderSettingsForm();
+  renderObsSettingsForm();
+  renderLocalOscForms();
+  refreshCueLabelSurfaces();
+  renderOscBackupFiles(result.files || []);
+  setOscBackupStatus(result.message || `Imported OSC setting groups from ${sourceName}.`);
+}
+
+async function importOscSettingsBackup(payload, sourceName) {
+  const response = await fetch("/api/osc-backup/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json();
+  if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+  applyOscImportResult(result, sourceName);
+  await loadStatus({ full: true, force: true });
+}
+
+async function importOscSettingsPayload(file) {
+  if (!file) return;
+  try {
+    setOscBackupStatus(`Reading ${file.name}...`);
+    const raw = JSON.parse(await file.text());
+    setOscBackupStatus(`Importing OSC settings from ${file.name}...`);
+    await importOscSettingsBackup({ backup: raw, source_name: file.name }, file.name);
+  } catch (error) {
+    setOscBackupStatus(String(error.message || error));
+  } finally {
+    if (importOscSettings) importOscSettings.value = "";
+  }
+}
+
+async function importProjectOscSettingsPayload() {
+  const rawName = String(oscImportFileNameInput?.value || oscBackupFileNameInput?.value || "").trim();
+  if (!rawName) {
+    setOscBackupStatus("Choose or type a project OSC backup filename first.");
+    return;
+  }
+  const filename = sanitizeOscBackupFileName(rawName);
+  try {
+    setOscBackupStatus(`Importing ${filename} from project backups...`);
+    await importOscSettingsBackup({ filename }, filename);
+  } catch (error) {
+    setOscBackupStatus(String(error.message || error));
+  }
+}
 async function saveLookLinksPayload() {
   try {
     const response = await fetch("/api/config", {
@@ -7437,7 +8226,12 @@ async function refreshPalette(apply = false, options = {}) {
       const name = document.createElement("strong");
       name.textContent = item.name;
       const hex = document.createElement("small");
-      hex.textContent = item.hex;
+      const detail = item.coverage_ratio
+        ? `${item.hex} - ${Math.round(Number(item.coverage_ratio) * 1000) / 10}% pixels`
+        : item.source === "generated"
+          ? `${item.hex} - generated match`
+          : item.hex;
+      hex.textContent = detail;
       const actions = document.createElement("div");
       actions.className = "palette-actions";
       [
@@ -7486,6 +8280,7 @@ async function sendCommand(payload, options = {}) {
       renderQuickSettingsForm();
       renderManualModeForm();
       renderSettingsForm();
+      renderObsSettingsForm();
       renderLookLinkForm();
       renderLocalOscForms();
       renderSequencer();
@@ -7493,8 +8288,10 @@ async function sendCommand(payload, options = {}) {
     }
     if (result.state) renderShowState(result.state);
     await loadStatus();
+    return result;
   } catch (error) {
     showToast(String(error.message || error), true);
+    return null;
   }
 }
 
@@ -7532,6 +8329,7 @@ async function saveCurrentLookByName(name) {
       renderLookLinkForm();
       renderLocalOscForms();
       renderSettingsForm();
+      renderObsSettingsForm();
       renderSequencer();
     }
     if (result.presets) presetData = result.presets;
@@ -7555,12 +8353,12 @@ function scheduleStatusRefresh(show) {
   const running = Boolean(show?.bpm_running);
   const interval = Number(show?.bpm_interval_ms || 500);
   const visibleDelay = running ? Math.max(650, Math.min(1200, Math.round(interval * 8))) : 2800;
-  const settingsDelay = activeSectionId === "settingsSection" || activeSectionId === "nowPlayingSection" ? Math.max(visibleDelay, 5000) : visibleDelay;
+  const settingsDelay = ["settingsSection", "nowPlayingSection", "obsSection"].includes(activeSectionId) ? Math.max(visibleDelay, 5000) : visibleDelay;
   statusTimer = setTimeout(loadStatus, settingsDelay);
 }
 
 function statusPollOptions(options = {}) {
-  const full = Boolean(options.full) || !appSettings || !presetData || statusPollCount % FULL_STATUS_POLL_EVERY === 0 || activeSectionId === "settingsSection" || activeSectionId === "nowPlayingSection";
+  const full = Boolean(options.full) || !appSettings || !presetData || statusPollCount % FULL_STATUS_POLL_EVERY === 0 || ["settingsSection", "nowPlayingSection", "obsSection"].includes(activeSectionId);
   const blt = Boolean(options.full) || activeSectionId === "nowPlayingSection" || statusPollCount % BLT_STATUS_POLL_EVERY === 0;
   return { full, blt };
 }
@@ -7618,6 +8416,7 @@ async function loadStatus(options = {}) {
       renderArtworkOptions();
       renderManualModeForm();
       renderSettingsForm();
+      renderObsSettingsForm();
       renderLocalOscForms();
       renderSaveLookPicker();
       renderPresetEditor();
@@ -7667,6 +8466,7 @@ async function loadStatus(options = {}) {
     }
     statusPollCount += 1;
     scheduleStatusRefresh(status.show);
+    return status;
   } catch (error) {
     setConnection("offline", "Offline");
     serverAddress.textContent = "-";
@@ -7700,7 +8500,7 @@ function activateSection(sectionId, { scroll = true } = {}) {
   document.querySelectorAll(".section-view").forEach((view) => view.classList.toggle("active", view === section));
   if (window.location.hash !== `#${sectionId}`) history.replaceState(null, "", `#${sectionId}`);
   if (scroll) scheduleLiveSurfaceScroll();
-  loadStatus({ force: true, full: sectionId === "settingsSection" || sectionId === "nowPlayingSection" });
+  loadStatus({ force: true, full: ["settingsSection", "nowPlayingSection", "obsSection"].includes(sectionId) });
 }
 
 document.querySelectorAll(".tab-button").forEach((button) => {
@@ -7750,6 +8550,7 @@ if (panicSafeButton) {
 }
 
 document.querySelectorAll("[data-command]").forEach((button) => {
+  if (button.dataset.nowPlayingActionSource) return;
   button.addEventListener("click", () => sendCommand({ command: button.dataset.command }));
 });
 document.querySelectorAll("[data-relationship]").forEach((button) => {
@@ -7773,14 +8574,41 @@ bpmSlider.addEventListener("input", () => {
 bpmSlider.addEventListener("change", sendBpmUpdate);
 saveSettings.addEventListener("click", saveSettingsPayload);
 saveSettingsSticky.addEventListener("click", saveSettingsPayload);
+if (saveObsSettings) saveObsSettings.addEventListener("click", saveObsSettingsPayload);
 saveQuickSettings.addEventListener("click", saveQuickSettingsPayload);
+if (downloadOscSettings) downloadOscSettings.addEventListener("click", downloadOscSettingsPayload);
+if (exportOscSettings) exportOscSettings.addEventListener("click", exportOscSettingsPayload);
+if (importProjectOscSettings) importProjectOscSettings.addEventListener("click", importProjectOscSettingsPayload);
+if (importOscSettings) {
+  importOscSettings.addEventListener("change", () => importOscSettingsPayload(importOscSettings.files?.[0]));
+}
 saveLightsOsc.addEventListener("click", saveLightsOscPayload);
 saveVisualsOsc.addEventListener("click", saveVisualsOscPayload);
 saveCamerasOsc.addEventListener("click", saveCamerasOscPayload);
 saveNowPlayingOsc.addEventListener("click", saveNowPlayingOscPayload);
-if (manualModeForm) manualModeForm.addEventListener("input", () => {
-  manualModeDirty = true;
-  if (manualModeStatus) manualModeStatus.textContent = "Unsaved manual mode text.";
+[manualModeForm, beatlinkSourceForm, spotifySourceForm].forEach((form) => {
+  if (!form) return;
+  form.addEventListener("input", () => {
+    manualModeDirty = true;
+    if (manualModeStatus) manualModeStatus.textContent = "Unsaved Now Playing source settings.";
+    if (beatlinkSourceStatus && form === beatlinkSourceForm) beatlinkSourceStatus.textContent = "Unsaved BeatLink settings.";
+    if (spotifyAuthStatus && form === spotifySourceForm) spotifyAuthStatus.textContent = "Unsaved Spotify settings.";
+  });
+});
+if (nowPlayingSourceTabs) {
+  nowPlayingSourceTabs.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-now-playing-source]");
+    if (!button) return;
+    activeNowPlayingSource = button.dataset.nowPlayingSource || "beatlink";
+    renderNowPlayingSourceTabs(latestShow);
+  });
+}
+document.querySelectorAll("[data-now-playing-action-source]").forEach((button) => {
+  button.addEventListener("click", () => {
+    optimisticNowPlayingMode = nowPlayingModeForCommand(button.dataset.command || "resume");
+    renderSelectedButtons({ ...(latestShow || {}), manual_mode: optimisticNowPlayingMode });
+    sendCommand({ command: button.dataset.command });
+  });
 });
 if (saveManualModeText) saveManualModeText.addEventListener("click", saveManualModePayload);
 if (rebuildMusicIndex) rebuildMusicIndex.addEventListener("click", rebuildMusicIndexPayload);
@@ -7886,9 +8714,9 @@ function initializeTabletSetupPanels() {
 initializeTabletSetupPanels();
 renderDivisionButtons();
 applyLiveDeckVisibility();
+if (oscBackupFileNameInput && !oscBackupFileNameInput.value) oscBackupFileNameInput.value = defaultOscBackupFileName();
+loadOscBackupFiles();
 const initialSectionId = window.location.hash.slice(1);
 if (initialSectionId && document.querySelector(`#${initialSectionId}`)) activateSection(initialSectionId);
 loadStatus();
-
-
 
