@@ -72,7 +72,7 @@ Recent v4 direction:
 
 ## 2026-06-30 - Videogames settings save
 - Fixed core settings saves for Videogames artwork/text so typed paths persist and refresh the active manual mode.
-- Updated the local Videogames artwork path to `C:\Users\ryant\Videos\Resolume Visuals\Album Artwork\Videogames.png`.
+- Updated the local Videogames artwork path handling for user-configured Resolume artwork folders.
 
 ## 2026-07-01 - Live Deck Now Playing and BPM
 - Added Now Playing mode triggers, editable manual text, and section access to the Live Deck.
@@ -100,4 +100,7 @@ Recent v4 direction:
 - Reordered visual clip rows so Layer 3 is top, Layer 2 is middle, and Layer 1 is bottom.
 - Added always-visible Album Colors controls and BPM Color Rotation controls to the Live Deck Now Playing card.
 
+## Unreleased
+
+- Added a Unified Now Playing service with safe read-only API endpoints, Server-Sent Events updates, artwork serving, and a full-screen `/display/now-playing` browser page for local-network displays.
 

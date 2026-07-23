@@ -2,7 +2,7 @@
     "active_connection_profile":  "pc_server_tablet",
     "app_bind_host":  "0.0.0.0",
     "app_port":  8080,
-    "music_root":  "\\\\SHOW-PC\\Music",
+    "music_root":  "\\\\MUSIC-SERVER\\Music",
     "artwork_output":  "data/current_artwork.jpg",
     "fallback_artwork_path":  "",
     "vinyl_logo_path":  "assets/NO_TALKING_DOUGHNUT_LOGO_2.png",
@@ -14,15 +14,15 @@
                                  "host":  "127.0.0.1",
                                  "addresses":  [
                                                    "127.0.0.1",
-                                                   "192.168.1.217"
+                                                   "192.168.1.50"
                                                ]
                              },
                              {
                                  "id":  "pc",
                                  "label":  "Show PC",
-                                 "host":  "192.168.1.197",
+                                 "host":  "192.168.1.60",
                                  "addresses":  [
-                                                   "192.168.1.197"
+                                                   "192.168.1.60"
                                                ]
                              },
                              {
@@ -95,9 +95,41 @@
                                                 "STROBE":  "royal"
                                             }
                             },
-    "preset_links":  {
+    "macros":  [
+                   {
+                       "id":  "example_clock",
+                       "name":  "Stream Clock",
+                       "type":  "osc_clock",
+                       "enabled":  false,
+                       "address":  "/composition/layers/1/clips/1/video/source/blocktextgenerator/text/params/lines",
+                       "target_ids":  [
+
+                                      ],
+                       "time_format":  "12h",
+                       "prefix":  "",
+                       "suffix":  ""
+                   },
+                   {
+                       "id":  "example_button",
+                       "name":  "Example OSC Button",
+                       "type":  "osc_button",
+                       "enabled":  false,
+                       "address":  "/composition/example/trigger",
+                       "target_ids":  [
+
+                                      ],
+                       "value_type":  "trigger",
+                       "value":  1.0
+                   }
+               ],    "preset_links":  {
 
                      },
     "vinyl_track_text":  "Record Playing",
-    "studio_track_text":  "NO TALKING STUDIO"
+    "studio_track_text":  "NO TALKING STUDIO",
+    "spotify_enabled":  false,
+    "spotify_client_id":  "",
+    "spotify_redirect_uri":  "http://127.0.0.1:8080/spotify/callback",
+    "spotify_market":  "US",
+    "spotify_track_text":  "Spotify Now Playing",
+    "spotify_track_template":  "{artist} - {title}"
 }

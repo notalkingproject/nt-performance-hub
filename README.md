@@ -13,7 +13,7 @@ It helps control:
 - Browser-based generative visuals.
 - Show sequences.
 - Optional OBS recording/streaming controls.
-- A starter Macros section for future OSC, hotkey, webhook, or script buttons.
+- Macros: configurable OSC Buttons and server-run OSC Clocks for Resolume text or cue automation.
 
 ## How The Show Setup Works
 
@@ -49,6 +49,25 @@ Before a show, open:
 http://127.0.0.1:8080/preflight
 ```
 
+
+## Macros
+
+The Macros page provides reusable show actions that are saved in the app config and run through the Python server.
+
+### OSC Button
+
+An OSC Button is a tablet-friendly button with a saved name, enabled state, OSC address, OSC value type, value, and optional OSC destination selection. Press **Trigger** from the editor or press the macro on the Live Deck to send one OSC action. Destination selection uses the existing OSC Targets list; leaving all destination boxes unchecked sends to every enabled OSC target.
+
+Supported value types are Trigger/impulse, Float, Integer, String, and Boolean. Configure the OSC address to match the Resolume parameter or action you want to control.
+
+### OSC Clock
+
+An OSC Clock sends the server computer's local time as an OSC string once per minute. The browser does not need to stay open: the clock scheduler runs in the Python server and resumes after NT Performance Hub restarts.
+
+Clock settings include name, enabled state, OSC address, OSC destinations, 12-hour or 24-hour format, optional prefix, optional suffix, a live preview, and **Send Now** for testing. The 12-hour format sends values such as `9:42 PM`; the 24-hour format sends values such as `21:42`. Seconds are never included.
+
+Additional macro types such as hotkeys, webhooks, scripts, scheduled cues, or compound actions can be added later on top of the same server-owned macro model.
+
 ## The Main Buttons
 
 - `Start NT Performance Hub.bat` starts the app.
@@ -82,7 +101,7 @@ Show-system requirements:
 - Stable IP addresses or machine names for show devices.
 - A readable music folder if using artwork matching.
 - OBS with WebSocket enabled if you want recording/streaming controls.
-- Spotify developer login setup later if you want Spotify Now Playing metadata/artwork.
+- Spotify developer credentials are required for live Spotify Now Playing via the local OAuth PKCE connection.
 
 Read `SYSTEM_REQUIREMENTS.md` for the plain-English show setup checklist.
 
@@ -91,7 +110,7 @@ Read `SYSTEM_REQUIREMENTS.md` for the plain-English show setup checklist.
 
 OBS control uses OBS WebSocket on the show PC. Enable OBS WebSocket in OBS, then set the host, port, and password in Settings. The password is saved only in your local ignored config file.
 
-Spotify is scaffolded as a future Now Playing source. The plan is OAuth login, then use Spotify metadata/artwork for Now Playing and artwork-driven lights. Do not commit Spotify secrets or tokens to GitHub.
+Spotify Now Playing uses Spotify OAuth PKCE, stores local tokens in ignored `data/spotify_tokens.json`, polls Spotify only while Spotify mode is active, sends the existing Now Playing OSC outputs, and updates `current_artwork.jpg`. Automatic artwork color matching remains controlled only by the Lights album-art matching setting.
 ## GitHub Workflow
 
 On the laptop where you edit:
@@ -124,3 +143,57 @@ Machine-specific config, logs, generated data, and PID files stay local and are 
 
 It does not list Beat Link Trigger, Resolume, CDJs, network gear, or firewall settings. Those are covered in `SYSTEM_REQUIREMENTS.md`.
 
+
+
+## Unified Now Playing Display
+
+NT Performance Hub now keeps one server-owned Now Playing read model for display clients. Spotify, BeatLink / CDJ, Vinyl, Studio, and Videogames publish normalized state into this service while the explicit source selector remains authoritative. Updating an inactive source does not take over the public display.
+
+Display page:
+
+```text
+/display/now-playing
+```
+
+Read-only local API endpoints:
+
+```text
+GET /api/now-playing
+GET /api/now-playing/status
+GET /api/now-playing/artwork
+GET /api/now-playing/events
+```
+
+Example response:
+
+```json
+{
+  "ok": true,
+  "now_playing": {
+    "source": "spotify",
+    "source_label": "Spotify",
+    "title": "Track Name",
+    "artist": "Artist Name",
+    "album": "Album Name",
+    "artwork_url": "/api/now-playing/artwork?v=12",
+    "has_artwork": true,
+    "is_playing": true,
+    "is_paused": false,
+    "progress_ms": 83000,
+    "duration_ms": 248000,
+    "state_version": 123
+  }
+}
+```
+
+`/api/now-playing/events` is a Server-Sent Events stream. Browsers reconnect automatically and receive the current state immediately after connecting. Artwork URLs use the artwork version query parameter for cache busting.
+
+To open the display from another device, start NT Performance Hub, use the computer's private-network address, and open:
+
+```text
+http://YOUR_COMPUTER_IP:8080/display/now-playing
+```
+
+Use the configured app port if you changed it from `8080`. Windows Firewall may need to allow the NT Performance Hub port on private networks. Do not expose this server directly to the public internet.
+
+The display API intentionally excludes Spotify tokens, OAuth state, local filesystem paths, OSC target addresses, SMB music-library paths, raw source payloads, and private app configuration. It is read-only and cannot switch sources or trigger outputs.

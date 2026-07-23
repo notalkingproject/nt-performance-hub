@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Now Playing Display</title>
+    <link rel="stylesheet" href="/now-playing-display.css?v=20260722-cdj-beatlink-label">
+  </head>
+  <body>
+    <main class="display-shell" aria-live="polite">
+      <section class="artwork-panel">
+        <img id="artwork" alt="Current album artwork">
+        <div id="artworkFallback" class="artwork-fallback">NT</div>
+      </section>
+      <section class="metadata-panel">
+        <p id="connection" class="connection">Connecting to NT Performance Hub...</p>
+        <h1 id="title">Connecting...</h1>
+        <p id="artist" class="artist"></p>
+        <p id="album" class="album"></p>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          <div class="progress-times"><span id="elapsed">--:--</span><span id="duration">--:--</span></div>
+        </div>
+        <p class="source-line"><span id="source">Now Playing</span><span aria-hidden="true"> </span><span id="playback">Starting</span></p>
+      </section>
+    </main>
+    <script src="/now-playing-display.js?v=20260722-cdj-beatlink-label"></script>
+  </body>
+</html>

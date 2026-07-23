@@ -19,7 +19,7 @@ Before using a new show machine, review `SYSTEM_REQUIREMENTS.md` for Beat Link T
 
 Copy `config/app_config.example.json` to `config/app_config.json`, then edit these values for the room:
 
-- `music_root`: local path like `D:\Music` or a network share like `\\SHOW-PC\Music`.
+- `music_root`: local path like `D:\Music` or a network share like `\\MUSIC-SERVER\Music`.
 - `network_machines`: machine labels and IP addresses for the laptop, show PC, and stream PC.
 - `network_routes`: which machine has Beat Link Trigger and which machine receives Resolume OSC.
 - `osc_targets`: every Resolume or stream machine that should receive OSC commands.

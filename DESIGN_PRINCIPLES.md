@@ -274,15 +274,19 @@ Artwork palette logic should:
 
    Incoming config and preset payloads should be cleaned by backend helpers before being saved.
 
-3. Reuse local render helpers.
+3. Keep automation server-owned.
+
+   Macros and scheduled outputs should store normalized configuration on the Python server. Browsers may edit, preview, and trigger actions, but recurring automation such as clocks must continue without an open browser and must reuse the shared OSC destination layer.
+
+4. Reuse local render helpers.
 
    Shared UI patterns like cue dropdowns, OSC builders, sliders, and look cards should be implemented once and reused.
 
-4. Avoid unrelated refactors.
+5. Avoid unrelated refactors.
 
    Changes should stay close to the requested workflow unless a shared helper clearly reduces future friction.
 
-5. Verify the cheap things every time.
+6. Verify the cheap things every time.
 
    At minimum, run JavaScript syntax checks and Python compile checks after app changes. When the browser tool is available, visually check layout at desktop and tablet-like widths.
 
@@ -308,3 +312,5 @@ Avoid layouts that require all controls to fit in one row. If a row has more tha
 ## Documentation Principle
 
 When a feature changes the workflow, update `README.md`. When a feature changes the app philosophy or recurring implementation strategy, update this file.
+
+- Source integrations publish normalized state into one server-owned Now Playing service. Display clients consume a read-only public representation and never depend directly on source-specific integrations.

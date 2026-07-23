@@ -7,15 +7,19 @@ album-artwork helpers, linked looks, cameras, visuals, and show sequencing.
 from __future__ import annotations
 
 import argparse
+import base64
 import colorsys
+import hashlib
 import contextlib
 import io
 import json
 import mimetypes
 import os
 import re
+import secrets
 import shutil
 import socket
+import sys
 import struct
 import subprocess
 import tempfile
@@ -29,8 +33,8 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
-from urllib.request import urlopen
+from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
 
 
 APP_VERSION = "nt-performance-hub"
@@ -58,6 +62,13 @@ DEFAULT_VIDEOGAME_ARTWORK_PATH = str(ASSETS_DIR / "NO_TALKING_DOUGHNUT_LOGO_2.pn
 DEFAULT_VIDEOGAME_TRACK_TEXT = "Ravenswatch"
 DEFAULT_SPOTIFY_ARTWORK_PATH = str(ASSETS_DIR / "NO_TALKING_DOUGHNUT_LOGO_2.png")
 DEFAULT_SPOTIFY_TRACK_TEXT = "Spotify Now Playing"
+DEFAULT_SPOTIFY_TRACK_TEMPLATE = "{artist} - {title}"
+SPOTIFY_TOKEN_PATH = DATA_DIR / "spotify_tokens.json"
+ADMIN_TOKEN_PATH = DATA_DIR / "admin_token.txt"
+SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
+SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
+SPOTIFY_API_BASE = "https://api.spotify.com/v1"
+SPOTIFY_MINIMUM_SCOPE = "user-read-currently-playing user-read-playback-state"
 BLT_SOURCE_TIMEOUT_SECONDS = 0.45
 BLT_POLL_TIMEOUT_SECONDS = 0.9
 OBS_REQUEST_TIMEOUT_SECONDS = 2.5
@@ -1755,6 +1766,177 @@ def save_config(config: dict[str, Any]) -> None:
     temp_path.replace(CONFIG_PATH)
 
 
+def load_spotify_tokens() -> dict[str, Any]:
+    if not SPOTIFY_TOKEN_PATH.exists():
+        return {}
+    try:
+        data = json.loads(SPOTIFY_TOKEN_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_spotify_tokens(tokens: dict[str, Any]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    temp_path = SPOTIFY_TOKEN_PATH.with_suffix(".tmp")
+    temp_path.write_text(json.dumps(tokens, indent=2), encoding="utf-8")
+    temp_path.replace(SPOTIFY_TOKEN_PATH)
+
+
+def clear_spotify_tokens() -> None:
+    with contextlib.suppress(OSError):
+        SPOTIFY_TOKEN_PATH.unlink()
+
+
+def spotify_config(config: dict[str, Any] | None = None) -> dict[str, Any]:
+    config = config or load_config()
+    return {
+        "spotify_enabled": bool(config.get("spotify_enabled", False)),
+        "spotify_client_id": text_value(config.get("spotify_client_id", "")),
+        "spotify_redirect_uri": text_value(config.get("spotify_redirect_uri", "http://127.0.0.1:8080/spotify/callback")) or "http://127.0.0.1:8080/spotify/callback",
+        "spotify_market": (text_value(config.get("spotify_market", "US")) or "US").upper(),
+        "spotify_track_text": text_value(config.get("spotify_track_text", DEFAULT_SPOTIFY_TRACK_TEXT)) or DEFAULT_SPOTIFY_TRACK_TEXT,
+        "spotify_track_template": text_value(config.get("spotify_track_template", DEFAULT_SPOTIFY_TRACK_TEMPLATE)) or DEFAULT_SPOTIFY_TRACK_TEMPLATE,
+        "spotify_artwork_path": text_value(config.get("spotify_artwork_path", DEFAULT_SPOTIFY_ARTWORK_PATH)),
+        "spotify_poll_seconds_playing": parse_int(config.get("spotify_poll_seconds_playing", 5), 5, 2, 60),
+        "spotify_poll_seconds_idle": parse_int(config.get("spotify_poll_seconds_idle", 15), 15, 5, 300),
+        "spotify_idle_grace_seconds": parse_int(config.get("spotify_idle_grace_seconds", 30), 30, 0, 3600),
+        "spotify_keep_last_track_when_paused": bool_from_payload(config.get("spotify_keep_last_track_when_paused", True)),
+    }
+
+
+def spotify_token_status() -> dict[str, Any]:
+    tokens = load_spotify_tokens()
+    return {
+        "connected": bool(tokens.get("refresh_token") or tokens.get("access_token")),
+        "account_name": text_value(tokens.get("account_name", "")),
+        "scope": text_value(tokens.get("scope", "")),
+        "expires_at": tokens.get("expires_at", 0),
+    }
+
+
+def spotify_form_request(url: str, form: dict[str, Any], headers: dict[str, str] | None = None, timeout: float = 8.0) -> dict[str, Any]:
+    body = urlencode({key: text_value(value) for key, value in form.items()}).encode("utf-8")
+    request = Request(url, data=body, headers={"Content-Type": "application/x-www-form-urlencoded", **(headers or {})}, method="POST")
+    with urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def spotify_json_get(url: str, access_token: str, timeout: float = 8.0) -> tuple[int, dict[str, Any]]:
+    request = Request(url, headers={"Authorization": f"Bearer {access_token}"}, method="GET")
+    with urlopen(request, timeout=timeout) as response:
+        body = response.read().decode("utf-8")
+        return response.status, json.loads(body) if body else {}
+
+
+def spotify_pkce_challenge(verifier: str) -> str:
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
+
+
+def normalize_spotify_playback(payload: dict[str, Any] | None) -> dict[str, Any]:
+    payload = payload if isinstance(payload, dict) else {}
+    item = payload.get("item") if isinstance(payload.get("item"), dict) else {}
+    if not item and any(key in payload for key in ("title", "track_id", "track_uri", "track_key")):
+        title = text_value(payload.get("title", ""))
+        track_id = text_value(payload.get("track_id", ""))
+        track_uri = text_value(payload.get("track_uri", ""))
+        return {
+            "source": "spotify",
+            "item_type": "track" if title or track_id or track_uri else "none",
+            "track_id": track_id,
+            "track_uri": track_uri,
+            "track_key": text_value(payload.get("track_key", "")) or track_uri or track_id,
+            "title": title,
+            "artist": text_value(payload.get("artist", "")),
+            "album": text_value(payload.get("album", "")),
+            "artwork_url": text_value(payload.get("artwork_url", "")),
+            "duration_ms": int(payload.get("duration_ms") or 0),
+            "progress_ms": int(payload.get("progress_ms") or 0),
+            "is_playing": bool(payload.get("is_playing", False)),
+            "is_paused": bool(title or track_id or track_uri) and not bool(payload.get("is_playing", False)),
+            "device_name": text_value(payload.get("device_name", "")),
+            "explicit": bool(payload.get("explicit", False)),
+        }
+    album = item.get("album") if isinstance(item.get("album"), dict) else {}
+    artists = item.get("artists") if isinstance(item.get("artists"), list) else []
+    artist = ", ".join(text_value(entry.get("name", "")) for entry in artists if isinstance(entry, dict) and text_value(entry.get("name", "")))
+    images = album.get("images") if isinstance(album.get("images"), list) else []
+    artwork_url = ""
+    if images:
+        image = max((img for img in images if isinstance(img, dict)), key=lambda img: int(img.get("width") or 0), default={})
+        artwork_url = text_value(image.get("url", ""))
+    title = text_value(item.get("name", ""))
+    track_id = text_value(item.get("id", ""))
+    return {
+        "source": "spotify",
+        "item_type": "track" if title or track_id else "none",
+        "track_id": track_id,
+        "track_uri": text_value(item.get("uri", "")),
+        "track_key": text_value(item.get("uri", "")) or track_id,
+        "title": title,
+        "artist": artist,
+        "album": text_value(album.get("name", "")),
+        "artwork_url": artwork_url,
+        "duration_ms": int(item.get("duration_ms") or 0),
+        "progress_ms": int(payload.get("progress_ms") or 0),
+        "is_playing": bool(payload.get("is_playing", False)),
+        "is_paused": bool(title or track_id) and not bool(payload.get("is_playing", False)),
+        "device_name": text_value((payload.get("device") or {}).get("name", "")) if isinstance(payload.get("device"), dict) else "",
+        "explicit": bool(item.get("explicit", False)),
+    }
+
+
+def spotify_playback_is_activatable(current: dict[str, Any] | None) -> bool:
+    if not isinstance(current, dict):
+        return False
+    return text_value(current.get("item_type", "")) != "none" and bool(
+        text_value(current.get("title", ""))
+        or text_value(current.get("track_id", ""))
+        or text_value(current.get("track_uri", ""))
+    )
+
+
+class NowPlayingReadModel:
+    def __init__(self) -> None:
+        self.lock = threading.RLock()
+        self.sources: dict[str, dict[str, Any]] = {}
+        self.active_source = "cdj"
+        self.state_version = 0
+
+    def update_source_state(self, source: str, state: dict[str, Any]) -> bool:
+        source = text_value(source).casefold() or "unknown"
+        normalized = dict(state or {})
+        normalized.setdefault("source", source)
+        normalized["is_paused"] = bool(normalized.get("track_key") or normalized.get("title")) and not bool(normalized.get("is_playing", False))
+        with self.lock:
+            if self.sources.get(source) == normalized:
+                return False
+            self.sources[source] = normalized
+            if self.active_source == source:
+                self.state_version += 1
+            return True
+
+    def activate_source(self, source: str) -> None:
+        source = text_value(source).casefold() or "unknown"
+        with self.lock:
+            if self.active_source != source:
+                self.active_source = source
+                self.state_version += 1
+
+    def get_public_state(self) -> dict[str, Any]:
+        with self.lock:
+            state = dict(self.sources.get(self.active_source, {}))
+            state.setdefault("source", self.active_source)
+            state.setdefault("title", "")
+            state.setdefault("artist", "")
+            state.setdefault("album", "")
+            state.setdefault("track_key", "")
+            state.setdefault("is_playing", False)
+            state["is_paused"] = bool(state.get("track_key") or state.get("title")) and not bool(state.get("is_playing", False))
+            state["state_version"] = self.state_version
+            return state
+
 BPM_TIMING_OSC_ADDRESS_KEYS = (
     "bpm_osc_bpm_address",
     "bpm_osc_start_address",
@@ -2434,7 +2616,7 @@ def fallback_artwork_path(config: dict[str, Any]) -> Path | None:
 
 def normalize_match_text(text: str) -> str:
     text = str(text or "").casefold()
-    text = re.sub(r"\([^)]*\)|\[[^]]*\]", " ", text)
+    text = re.sub(r"[()\[\]]", " ", text)
     text = re.sub(r"\b(original|extended|radio|edit|mix|remix|club|dub|version|remaster(ed)?)\b", " ", text)
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()
@@ -2503,6 +2685,73 @@ def first_tag_value(tags: Any, *keys: str) -> str:
             return text_value(values[0])
         return text_value(values)
     return ""
+
+
+def index_entry_from_mp3_path(mp3_path: Path) -> dict[str, str]:
+    title = ""
+    artist = ""
+    album = ""
+    comment = ""
+    try:
+        from mutagen import File as MutagenFile
+
+        audio = MutagenFile(mp3_path, easy=True)
+        tags = audio.tags if audio is not None and audio.tags is not None else {}
+        title = first_tag_value(tags, "title")
+        artist = first_tag_value(tags, "artist", "albumartist")
+        album = first_tag_value(tags, "album")
+        comment = first_tag_value(tags, "comment", "description")
+    except Exception:
+        pass
+    filename = mp3_path.stem
+    title = title or filename
+    return {
+        "path": str(mp3_path),
+        "filename": filename,
+        "title": title,
+        "artist": artist,
+        "album": album,
+        "comment": comment,
+        "match_key": make_match_key(artist, title),
+        "fallback_key": normalize_match_text(filename),
+    }
+
+
+def find_best_track_match_on_disk(track: dict[str, str], music_root: Path) -> tuple[dict[str, str], float] | None:
+    if not music_root.exists() or not music_root.is_dir():
+        return None
+
+    filename_candidates: list[tuple[float, Path]] = []
+    try:
+        for mp3_path in music_root.rglob("*.mp3"):
+            filename = mp3_path.stem
+            filename_entry = {
+                "path": str(mp3_path),
+                "filename": filename,
+                "title": filename,
+                "artist": "",
+                "album": "",
+                "comment": "",
+                "match_key": make_match_key("", filename),
+                "fallback_key": normalize_match_text(filename),
+            }
+            score = score_track_match(track, filename_entry)
+            if score >= 0.58:
+                filename_candidates.append((score, mp3_path))
+    except OSError:
+        return None
+
+    best_entry: dict[str, str] | None = None
+    best_score = 0.0
+    for _filename_score, mp3_path in sorted(filename_candidates, key=lambda item: item[0], reverse=True)[:40]:
+        entry = index_entry_from_mp3_path(mp3_path)
+        score = score_track_match(track, entry)
+        if score > best_score:
+            best_entry = entry
+            best_score = score
+    if best_entry and best_score >= 0.72:
+        return best_entry, best_score
+    return None
 
 
 def build_music_library_index(music_root: Path) -> list[dict[str, str]]:
@@ -2827,6 +3076,19 @@ class ShowEngine:
         self.latest_artwork_status = "Artwork waits for matched track"
         self.latest_artwork_track_key = ""
         self.latest_auto_palette_key = ""
+        self.spotify_current = normalize_spotify_playback(None)
+        self.spotify_last_poll = ""
+        self.spotify_last_error = ""
+        self.spotify_oauth_state = ""
+        self.spotify_code_verifier = ""
+        self.spotify_last_active = normalize_spotify_playback(None)
+        self.spotify_last_active_monotonic = 0.0
+        self.spotify_last_poll_monotonic = 0.0
+        self.latest_spotify_output_key = ""
+        self.spotify_monitor_thread: threading.Thread | None = None
+        self.spotify_monitor_stop_event = threading.Event()
+        self.now_playing = NowPlayingReadModel()
+        self.now_playing_display_refresh_monotonic = 0.0
         self.music_index_rebuild_status = {"running": False, "message": "Music index has not been rebuilt this session.", "count": 0, "path": str(INDEX_PATH), "started": "", "finished": ""}
         self.music_index_rebuild_thread: threading.Thread | None = None
         self.reload_from_config()
@@ -3695,6 +3957,14 @@ class ShowEngine:
             "track_number": text_value(player.get("track-number", "")),
         }
 
+    def is_valid_blt_track_context(self, context: dict[str, str]) -> bool:
+        title = text_value(context.get("title", ""))
+        artist = text_value(context.get("artist", ""))
+        full_track = text_value(context.get("full_track", ""))
+        if title or artist:
+            return True
+        return bool(full_track and full_track.casefold() != "loaded track")
+
     def is_active_master_player(self, player: dict[str, Any]) -> bool:
         return (
             bool(player.get("is-track-loaded"))
@@ -3794,6 +4064,9 @@ class ShowEngine:
         self.maybe_auto_apply_artwork_palette(fallback_used=True, track_key=track_key, force=True)
 
     def update_track_artwork(self, context: dict[str, str], track_key: str, force: bool = False) -> dict[str, str]:
+        if not self.is_valid_blt_track_context(context):
+            self.log_command("BeatLink metadata is still loading; keeping current artwork")
+            return context
         if not force and track_key and track_key == self.latest_artwork_track_key:
             return context
         index = self.load_music_index()
@@ -3801,13 +4074,18 @@ class ShowEngine:
             self.write_fallback_artwork("Music index unavailable for artwork", track_key)
             return context
         match = find_best_track_match(context, index)
+        config = self.config()
+        if not match:
+            music_root = portable_project_path(config.get("music_root", ""))
+            match = find_best_track_match_on_disk(context, music_root)
+            if match:
+                self.log_command("Matched current BeatLink track by scanning Music Root because the music index missed it")
         if not match:
             self.write_fallback_artwork("No confident local MP3 match for artwork", track_key)
             self.log_command("No confident local MP3 match for current BeatLink track")
             return context
 
         entry, score = match
-        config = self.config()
         mp3_path = resolve_indexed_mp3_path(entry, config)
         indexed_path = Path(entry["path"])
         output_path = artwork_output_path(config)
@@ -3923,7 +4201,7 @@ class ShowEngine:
                 "last_poll_time": self.last_blt_poll_time,
             }
 
-    def poll_blt(self, send_on_change: bool = True) -> dict[str, Any]:
+    def poll_blt(self, send_on_change: bool = True, update_outputs: bool = True) -> dict[str, Any]:
         config = self.config()
         sources = blt_sources(config)
         if not sources:
@@ -4016,7 +4294,7 @@ class ShowEngine:
                     self.latest_blt_sources = source_results
                     self.last_blt_poll_time = datetime.now().isoformat(timespec="seconds")
                     if waiting_for_master:
-                        self.latest_blt_context = {}
+                        self.log_command("BeatLink is waiting for an active master deck; keeping previous track metadata")
                 return {
                     "ok": False,
                     "status": self.latest_blt_status,
@@ -4026,27 +4304,43 @@ class ShowEngine:
                 }
 
             source, context, track_key = selected
+            source_label = text_value(source.get("label", "BeatLink")) or "BeatLink"
+            if not self.is_valid_blt_track_context(context):
+                with self.lock:
+                    self.latest_blt_status = f"BeatLink connected; waiting for track metadata from {source_label}"
+                    self.latest_blt_error = ""
+                    self.latest_blt_sources = source_results
+                    self.last_blt_poll_time = datetime.now().isoformat(timespec="seconds")
+                return {
+                    "ok": False,
+                    "status": self.latest_blt_status,
+                    "changed": False,
+                    "context": dict(self.latest_blt_context),
+                    "sent": [],
+                    "source": {key: source[key] for key in ("id", "label", "url") if key in source},
+                    "sources": source_results,
+                }
             track_key = self.blt_track_key(context)
             changed = bool(track_key and track_key != self.latest_blt_key)
-            if changed and self.manual_mode == "cdj":
+            if update_outputs and changed and self.manual_mode == "cdj":
                 context = self.update_track_artwork(context, track_key)
-            source_label = text_value(source.get("label", "BeatLink")) or "BeatLink"
-            bpm_changed = self.follow_now_playing_bpm(context, source_label)
+            bpm_changed = self.follow_now_playing_bpm(context, source_label) if update_outputs else False
             if bpm_changed:
                 config["bpm_flip_bpm"] = str(self.bpm)
                 save_config(config)
             with self.lock:
                 self.latest_blt_context = context
+                self.publish_cdj_now_playing_state(context, activate=self.manual_mode == "cdj")
                 self.latest_blt_status = f"BeatLink live track loaded from {source_label}"
                 self.latest_blt_error = ""
                 self.latest_blt_sources = source_results
                 self.last_blt_poll_time = datetime.now().isoformat(timespec="seconds")
-                if changed or bpm_changed:
+                if update_outputs and (changed or bpm_changed):
                     self.latest_blt_key = track_key
                     if self.manual_mode == "cdj":
                         self.set_event(f"BeatLink track from {source_label}: {context.get('full_track', 'Loaded track')}")
             sent = []
-            if send_on_change and changed and self.manual_mode == "cdj":
+            if update_outputs and send_on_change and changed and self.manual_mode == "cdj":
                 sent = self.send_blt_outputs(context, f"BeatLink {source_label}")
             return {
                 "ok": True,
@@ -4066,7 +4360,7 @@ class ShowEngine:
                 self.latest_blt_sources = source_results
                 self.last_blt_poll_time = datetime.now().isoformat(timespec="seconds")
                 if waiting_for_master:
-                    self.latest_blt_context = {}
+                    self.log_command("BeatLink is waiting for an active master deck; keeping previous track metadata")
             return {"ok": False, "status": self.latest_blt_status, "context": self.latest_blt_context, "error": message, "sources": source_results}
 
     def send_blt_outputs(self, context: dict[str, str], source: str) -> list[dict[str, Any]]:
@@ -4190,6 +4484,22 @@ class ShowEngine:
                 with contextlib.suppress(Exception):
                     ws.close()
 
+    def sanitize_obs_response_data(self, category: str, data: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(data, dict):
+            return {}
+        if category == "info" and ("obsVersion" in data or "obsWebSocketVersion" in data):
+            keys = ("obsVersion", "obsWebSocketVersion", "platform", "platformDescription", "rpcVersion")
+            return {key: data[key] for key in keys if key in data}
+        if category == "info" and any(key in data for key in ("cpuUsage", "memoryUsage", "availableDiskSpace")):
+            keys = ("cpuUsage", "memoryUsage", "availableDiskSpace", "activeFps", "averageFrameRenderTime", "renderSkippedFrames", "outputSkippedFrames", "webSocketSessionIncomingMessages", "webSocketSessionOutgoingMessages")
+            return {key: data[key] for key in keys if key in data}
+        return dict(data)
+
+    def obs_status_payload(self, status: dict[str, Any] | None = None) -> dict[str, Any]:
+        source = dict(status or getattr(self, "obs_status", {}))
+        source.pop("raw", None)
+        return source
+
     def obs_command(self, action: str) -> dict[str, Any]:
         actions = {
             "record_status": ("GetRecordStatus", "Recording status checked", "record"),
@@ -4233,7 +4543,7 @@ class ShowEngine:
                 "last_action": action,
                 "last_checked": datetime.now().isoformat(timespec="seconds"),
                 "studio_mode": next_enabled,
-                "raw": data,
+                "raw": self.sanitize_obs_response_data(category, data),
             })
             with self.lock:
                 self.obs_status = status
@@ -4261,7 +4571,7 @@ class ShowEngine:
                 try:
                     response = self.obs_websocket_request(request_type)
                     data = response.get("responseData", {}) if isinstance(response, dict) else {}
-                    self.update_obs_status_from_response(current_status, category, data)
+                    self.update_obs_status_from_response(current_status, category, self.sanitize_obs_response_data(category, data))
                 except RuntimeError as exc:
                     errors[status_action] = str(exc)
             current_status["errors"] = errors
@@ -4281,9 +4591,9 @@ class ShowEngine:
             "message": message,
             "last_action": action,
             "last_checked": datetime.now().isoformat(timespec="seconds"),
-            "raw": data,
+            "raw": self.sanitize_obs_response_data(category, data),
         })
-        self.update_obs_status_from_response(status, category, data)
+        self.update_obs_status_from_response(status, category, self.sanitize_obs_response_data(category, data))
         with self.lock:
             self.obs_status = status
             self.set_event(message)
@@ -4318,6 +4628,292 @@ class ShowEngine:
                 status["version"] = data
             else:
                 status["stats"] = data
+    def stop_spotify_monitor(self) -> None:
+        self.spotify_monitor_stop_event.set()
+        thread = self.spotify_monitor_thread
+        if thread and thread.is_alive():
+            thread.join(timeout=2)
+        self.spotify_monitor_thread = None
+
+    def remember_spotify_track(self, current: dict[str, Any]) -> None:
+        if not spotify_playback_is_activatable(current):
+            return
+        self.spotify_last_active = dict(current)
+        self.spotify_last_active_monotonic = time.monotonic()
+
+    def effective_spotify_current(self) -> dict[str, Any]:
+        current = dict(self.spotify_current)
+        cfg = spotify_config(self.config())
+        if spotify_playback_is_activatable(current):
+            return current
+        if not cfg["spotify_keep_last_track_when_paused"]:
+            return current
+        last_active = dict(getattr(self, "spotify_last_active", {}))
+        if not spotify_playback_is_activatable(last_active):
+            return current
+        grace = cfg["spotify_idle_grace_seconds"]
+        if grace and time.monotonic() - float(getattr(self, "spotify_last_active_monotonic", 0.0)) > grace:
+            return current
+        last_active["preserved"] = True
+        last_active["preserved_reason"] = "no_active_playback"
+        last_active["is_playing"] = False
+        last_active["is_paused"] = True
+        return last_active
+
+    def update_spotify_now_playing_state(self, current: dict[str, Any]) -> None:
+        self.now_playing.update_source_state("spotify", {
+            "source": "spotify",
+            "source_label": "Spotify",
+            "title": text_value(current.get("title", "")),
+            "artist": text_value(current.get("artist", "")),
+            "album": text_value(current.get("album", "")),
+            "track_key": text_value(current.get("track_key", current.get("track_uri", current.get("track_id", "")))),
+            "duration_ms": int(current.get("duration_ms") or 0),
+            "progress_ms": int(current.get("progress_ms") or 0),
+            "device": text_value(current.get("device_name", "")),
+            "is_playing": bool(current.get("is_playing", False)),
+        })
+
+    def spotify_output_key(self, current: dict[str, Any], context: dict[str, str]) -> str:
+        return "|".join([
+            text_value(current.get("track_key", current.get("track_uri", current.get("track_id", "")))),
+            text_value(context.get("full_track", "")),
+            text_value(current.get("artwork_url", "")),
+        ])
+
+    def refresh_active_spotify_output(self) -> None:
+        if self.manual_mode != "spotify":
+            return None
+        current = self.effective_spotify_current()
+        self.update_spotify_now_playing_state(current)
+        self.now_playing.activate_source("spotify")
+        context = self.spotify_context(current)
+        output_key = self.spotify_output_key(current, context)
+        if output_key == self.latest_spotify_output_key:
+            return None
+        artwork_written = False
+        if context.get("full_track"):
+            artwork_written = self.write_spotify_artwork(current)
+        self.send_blt_outputs(context, "Spotify")
+        self.latest_spotify_output_key = output_key
+        self.set_event("Spotify now playing updated" if context.get("full_track") else "Spotify source active")
+        return {"current": current, "artwork_written": artwork_written}
+    def spotify_status(self) -> dict[str, Any]:
+        cfg = spotify_config(self.config())
+        token = spotify_token_status()
+        return {
+            "enabled": cfg["spotify_enabled"],
+            "connected": token["connected"],
+            "account_name": token["account_name"],
+            "active_source": self.manual_mode == "spotify",
+            "current": self.effective_spotify_current(),
+            "last_poll": self.spotify_last_poll,
+            "last_error": self.spotify_last_error,
+        }
+
+    def spotify_login(self) -> dict[str, Any]:
+        cfg = spotify_config(self.config())
+        client_id = cfg["spotify_client_id"]
+        if not client_id:
+            raise ValueError("Add your Spotify Client ID and save Spotify settings first.")
+        verifier = secrets.token_urlsafe(64)[:96]
+        state = secrets.token_urlsafe(32)
+        self.spotify_code_verifier = verifier
+        self.spotify_oauth_state = state
+        query = urlencode({
+            "response_type": "code",
+            "client_id": client_id,
+            "scope": SPOTIFY_MINIMUM_SCOPE,
+            "redirect_uri": cfg["spotify_redirect_uri"],
+            "state": state,
+            "code_challenge_method": "S256",
+            "code_challenge": spotify_pkce_challenge(verifier),
+        })
+        return {"ok": True, "authorization_url": f"{SPOTIFY_AUTH_URL}?{query}", "message": "Opening Spotify login..."}
+
+    def spotify_callback(self, query: dict[str, list[str]]) -> dict[str, Any]:
+        error = text_value(query.get("error", [""])[0])
+        if error:
+            raise ValueError(f"Spotify authorization failed: {error}")
+        state = text_value(query.get("state", [""])[0])
+        code = text_value(query.get("code", [""])[0])
+        if not code:
+            raise ValueError("Spotify did not return an authorization code.")
+        if not state or state != self.spotify_oauth_state:
+            raise ValueError("Spotify authorization state did not match. Try Connect again.")
+        if not self.spotify_code_verifier:
+            raise ValueError("Spotify authorization expired. Try Connect again.")
+        cfg = spotify_config(self.config())
+        token = spotify_form_request(SPOTIFY_TOKEN_URL, {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": cfg["spotify_redirect_uri"],
+            "client_id": cfg["spotify_client_id"],
+            "code_verifier": self.spotify_code_verifier,
+        })
+        token["expires_at"] = time.time() + int(token.get("expires_in") or 3600) - 60
+        with contextlib.suppress(Exception):
+            status, account = spotify_json_get(f"{SPOTIFY_API_BASE}/me", text_value(token.get("access_token", "")))
+            if status == 200:
+                token["account_name"] = text_value(account.get("display_name", account.get("id", "")))
+        save_spotify_tokens(token)
+        self.spotify_oauth_state = ""
+        self.spotify_code_verifier = ""
+        self.spotify_last_error = ""
+        self.poll_spotify_current(force=True)
+        return {"ok": True, "message": "Spotify connected.", "spotify": self.spotify_status(), "config": self.config_payload(), "state": self.snapshot()}
+
+    def spotify_access_token(self) -> str:
+        tokens = load_spotify_tokens()
+        access_token = text_value(tokens.get("access_token", ""))
+        if access_token and float(tokens.get("expires_at") or 0) > time.time():
+            return access_token
+        refresh_token = text_value(tokens.get("refresh_token", ""))
+        if not refresh_token:
+            return access_token
+        cfg = spotify_config(self.config())
+        refreshed = spotify_form_request(SPOTIFY_TOKEN_URL, {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+            "client_id": cfg["spotify_client_id"],
+        })
+        tokens.update(refreshed)
+        tokens["refresh_token"] = text_value(refreshed.get("refresh_token", refresh_token))
+        tokens["expires_at"] = time.time() + int(refreshed.get("expires_in") or 3600) - 60
+        save_spotify_tokens(tokens)
+        return text_value(tokens.get("access_token", ""))
+
+    def poll_spotify_current(self, force: bool = False, update_outputs: bool = True) -> dict[str, Any]:
+        cfg = spotify_config(self.config())
+        if not cfg["spotify_enabled"] and not force:
+            return self.spotify_status()
+        token = self.spotify_access_token()
+        if not token:
+            self.spotify_last_error = "Spotify is not connected."
+            if not spotify_playback_is_activatable(self.spotify_current):
+                self.spotify_current = normalize_spotify_playback(None)
+            return self.spotify_status()
+        try:
+            url = f"{SPOTIFY_API_BASE}/me/player/currently-playing?" + urlencode({"market": cfg["spotify_market"]})
+            status, payload = spotify_json_get(url, token)
+            if status == 204:
+                current = normalize_spotify_playback(None)
+            else:
+                current = normalize_spotify_playback(payload)
+            self.spotify_current = current
+            self.spotify_last_poll = datetime.now().isoformat(timespec="seconds")
+            self.spotify_last_poll_monotonic = time.monotonic()
+            self.spotify_last_error = ""
+            self.remember_spotify_track(current)
+            self.update_spotify_now_playing_state(self.effective_spotify_current())
+            if update_outputs:
+                self.refresh_active_spotify_output()
+            return self.spotify_status()
+        except Exception as exc:
+            self.spotify_last_error = str(exc)
+            return self.spotify_status()
+
+    def spotify_context(self, current: dict[str, Any]) -> dict[str, str]:
+        cfg = spotify_config(self.config())
+        title = text_value(current.get("title", ""))
+        artist = text_value(current.get("artist", ""))
+        album = text_value(current.get("album", ""))
+        full_track = cfg["spotify_track_template"].replace("{artist}", artist).replace("{title}", title).replace("{album}", album).strip()
+        if not (title or artist or album):
+            full_track = ""
+        return {
+            "title": title,
+            "artist": artist,
+            "album": album,
+            "full_track": full_track or " - ".join(part for part in (artist, title) if part),
+            "track_info": text_value(current.get("track_uri", current.get("track_id", ""))),
+            "bpm": "",
+            "player_number": "spotify",
+            "device_name": text_value(current.get("device_name", "Spotify")) or "Spotify",
+            "source_player": "spotify",
+            "player": "Spotify",
+            "comment": "",
+        }
+
+    def write_spotify_artwork(self, current: dict[str, Any]) -> bool:
+        artwork_url = text_value(current.get("artwork_url", ""))
+        if not artwork_url:
+            return False
+        with urlopen(artwork_url, timeout=8) as response:
+            data = response.read()
+        output_path = artwork_output_path(self.config())
+        ok = save_image_bytes_as_jpeg(data, output_path, artwork_dimensions(self.config(), "spotify"))
+        if ok:
+            with self.lock:
+                self.latest_matched_file = artwork_url
+                self.latest_match_score = 1.0
+                self.latest_artwork_status = f"Spotify artwork saved to {output_path.name}"
+                self.latest_artwork_track_key = text_value(current.get("track_uri", current.get("track_id", "spotify")))
+        return ok
+
+    def activate_spotify_source(self) -> dict[str, Any]:
+        status = self.poll_spotify_current(force=True)
+        current = status.get("current", {})
+        context = self.spotify_context(current)
+        artwork_written = False
+        if context.get("full_track"):
+            artwork_written = self.write_spotify_artwork(current)
+        sent = self.send_blt_outputs(context, "Spotify")
+        self.latest_spotify_output_key = self.spotify_output_key(current, context)
+        self.update_spotify_now_playing_state(current)
+        self.now_playing.activate_source("spotify")
+        with self.lock:
+            self.manual_mode = "spotify"
+            self.set_event("Spotify source active")
+        return {"ok": True, "message": "Spotify source active", "spotify": self.spotify_status(), "sent": sent, "artwork_written": artwork_written, "config": self.config_payload(), "state": self.snapshot()}
+
+    def disconnect_spotify(self) -> dict[str, Any]:
+        clear_spotify_tokens()
+        self.spotify_current = normalize_spotify_playback(None)
+        self.spotify_last_active = normalize_spotify_playback(None)
+        self.latest_spotify_output_key = ""
+        self.spotify_last_error = ""
+        return {"ok": True, "message": "Spotify disconnected.", "spotify": self.spotify_status(), "config": self.config_payload(), "state": self.snapshot()}
+
+    def publish_manual_now_playing_state(self, mode: str, context: dict[str, str], label: str) -> None:
+        full_track = text_value(context.get("full_track", ""))
+        track_key = f"manual:{mode}:{full_track}"
+        self.now_playing.update_source_state(mode, {
+            "source": mode,
+            "source_label": label,
+            "title": text_value(context.get("title", "")),
+            "artist": text_value(context.get("artist", "")),
+            "album": text_value(context.get("album", "")),
+            "full_track": full_track,
+            "track_key": track_key,
+            "track_info": text_value(context.get("track_info", "")),
+            "bpm": text_value(context.get("bpm", "")),
+            "player": text_value(context.get("player", "")),
+            "device": text_value(context.get("device_name", "")),
+            "is_playing": bool(full_track or context.get("title") or context.get("artist")),
+        })
+        self.now_playing.activate_source(mode)
+
+    def publish_cdj_now_playing_state(self, context: dict[str, str] | None = None, activate: bool = False) -> None:
+        context = dict(context or self.latest_blt_context or {})
+        track_key = self.blt_track_key(context) if context else ""
+        self.now_playing.update_source_state("cdj", {
+            "source": "cdj",
+            "source_label": "CDJ Beatlink",
+            "title": text_value(context.get("title", "")),
+            "artist": text_value(context.get("artist", "")),
+            "album": text_value(context.get("album", "")),
+            "full_track": text_value(context.get("full_track", "")),
+            "track_key": track_key,
+            "track_info": text_value(context.get("track_info", "")),
+            "bpm": text_value(context.get("bpm", "")),
+            "player": text_value(context.get("player", context.get("player_number", ""))),
+            "device": text_value(context.get("device_name", "")),
+            "is_playing": bool(context.get("title") or context.get("artist") or context.get("full_track")),
+        })
+        if activate:
+            self.now_playing.activate_source("cdj")
+
     def enter_manual_mode(self, mode: str) -> dict[str, Any]:
         config = self.config()
         fallback_path = fallback_artwork_path(config)
@@ -4356,6 +4952,7 @@ class ShowEngine:
             track_key = f"manual:{mode}:{source_path if source_path.is_file() else 'generated'}"
             self.maybe_auto_apply_artwork_palette(fallback_used=fallback_used, track_key=track_key, force=True)
         context = self.manual_context(text, mode)
+        self.publish_manual_now_playing_state(mode, context, status_label)
         sent = self.send_blt_outputs(context, mode)
         with self.lock:
             self.manual_mode = mode
@@ -4367,12 +4964,14 @@ class ShowEngine:
         with self.lock:
             self.manual_mode = "cdj"
             self.set_event("CDJ artwork mode resumed")
+            self.publish_cdj_now_playing_state(self.latest_blt_context, activate=True)
         if self.latest_blt_context:
             track_key = self.blt_track_key(self.latest_blt_context)
             context = self.update_track_artwork(dict(self.latest_blt_context), track_key, force=True)
             sent = self.send_blt_outputs(context, "CDJ resume")
             with self.lock:
                 self.latest_blt_context = context
+                self.publish_cdj_now_playing_state(context, activate=True)
         return {"ok": True, "message": "CDJ artwork mode resumed", "sent": sent, "state": self.snapshot()}
 
     def bpm_timing_snapshot(self) -> dict[str, Any]:
@@ -4722,12 +5321,18 @@ class ShowEngine:
             "videogame_artwork_path": text_value(config.get("videogame_artwork_path", DEFAULT_VIDEOGAME_ARTWORK_PATH)),
             "videogame_track_text": text_value(config.get("videogame_track_text", DEFAULT_VIDEOGAME_TRACK_TEXT)),
             "spotify_artwork_path": text_value(config.get("spotify_artwork_path", DEFAULT_SPOTIFY_ARTWORK_PATH)),
+            "spotify_poll_seconds_playing": parse_int(config.get("spotify_poll_seconds_playing", 5), 5, 2, 60),
+            "spotify_poll_seconds_idle": parse_int(config.get("spotify_poll_seconds_idle", 15), 15, 5, 300),
+            "spotify_idle_grace_seconds": parse_int(config.get("spotify_idle_grace_seconds", 30), 30, 0, 3600),
+            "spotify_keep_last_track_when_paused": bool_from_payload(config.get("spotify_keep_last_track_when_paused", True)),
             "spotify_track_text": text_value(config.get("spotify_track_text", DEFAULT_SPOTIFY_TRACK_TEXT)),
             "spotify_enabled": bool(config.get("spotify_enabled", False)),
             "spotify_client_id": text_value(config.get("spotify_client_id", "")),
             "spotify_redirect_uri": text_value(config.get("spotify_redirect_uri", "http://127.0.0.1:8080/spotify/callback")),
             "spotify_market": text_value(config.get("spotify_market", "US")),
+            "spotify_track_template": text_value(config.get("spotify_track_template", DEFAULT_SPOTIFY_TRACK_TEMPLATE)),
             "spotify_auth_ready": bool(text_value(config.get("spotify_client_id", ""))),
+            "spotify_status": self.spotify_status(),
             "output_pixels": normalize_artwork_size(config.get("output_pixels", DEFAULT_OUTPUT_PIXELS)),
             "cdj_artwork_width": artwork_dimensions(config, "cdj")[0],
             "cdj_artwork_height": artwork_dimensions(config, "cdj")[1],
@@ -4796,7 +5401,7 @@ class ShowEngine:
             "obs_port": parse_int(config.get("obs_port", 4455), 4455, 1, 65535),
             "obs_password": "",
             "obs_password_saved": bool(text_value(config.get("obs_password", ""))),
-            "obs_status": dict(getattr(self, "obs_status", {})),
+            "obs_status": self.obs_status_payload(),
         }
 
     def update_config(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -4826,6 +5431,10 @@ class ShowEngine:
             "spotify_client_id",
             "spotify_redirect_uri",
             "spotify_market",
+            "spotify_track_template",
+            "spotify_poll_seconds_playing",
+            "spotify_poll_seconds_idle",
+            "spotify_idle_grace_seconds",
             "obs_host",
             "default_fallback_template",
             "neutral_artwork_color",
@@ -4865,6 +5474,8 @@ class ShowEngine:
             config["obs_password"] = text_value(payload.get("obs_password", ""))
         if "spotify_enabled" in payload:
             config["spotify_enabled"] = bool_from_payload(payload["spotify_enabled"])
+        if "spotify_keep_last_track_when_paused" in payload:
+            config["spotify_keep_last_track_when_paused"] = bool_from_payload(payload["spotify_keep_last_track_when_paused"])
         if "osc_targets" in payload:
             config["osc_targets"] = [
                 target
@@ -4973,7 +5584,18 @@ class ShowEngine:
             config["camera_opacity_labels"] = normalize_camera_opacity_labels(payload.get("camera_opacity_labels"))
 
         if "visual_controls" in payload:
-            config["visual_controls"] = normalize_visual_controls(payload.get("visual_controls"))
+            existing_visual_controls = normalize_visual_controls(config.get("visual_controls", []))
+            submitted_visual_controls = payload.get("visual_controls")
+            if isinstance(submitted_visual_controls, dict):
+                submitted_items = submitted_visual_controls.get("items", {})
+                raw_submitted_items = []
+                if isinstance(submitted_items, dict):
+                    raw_submitted_items = [item for item in submitted_items.values() if isinstance(item, dict)]
+                elif isinstance(submitted_items, list):
+                    raw_submitted_items = [item for item in submitted_items if isinstance(item, dict)]
+                config["visual_controls"] = normalize_visual_controls({"items": [*existing_visual_controls, *raw_submitted_items]})
+            else:
+                config["visual_controls"] = normalize_visual_controls(submitted_visual_controls)
         if "visual_slider_controls" in payload:
             config["visual_slider_controls"] = normalize_visual_slider_controls(payload.get("visual_slider_controls"), config)
             sliders = normalize_visual_slider_controls(config.get("visual_slider_controls", []), config)
@@ -5602,7 +6224,7 @@ class ShowEngine:
         valid_groups = {key for key, _label in CAMERA_GROUP_SPECS}
         if group_key not in valid_groups:
             raise ValueError("Unknown camera opacity group.")
-        percent = parse_percent(value, self.camera_opacity.get(group_key, 100))
+        percent = 100 if parse_percent(value, self.camera_opacity.get(group_key, 100)) >= 50 else 0
         config = self.config()
         addresses = normalize_camera_opacity_addresses(config.get("camera_opacity_addresses", {}))
         address = addresses.get(group_key, "")
@@ -5740,7 +6362,7 @@ class ShowEngine:
                 "camera_opacity": dict(self.camera_opacity),
                 "visual_opacity": self.visual_opacity,
                 "now_playing_opacity": self.now_playing_opacity,
-                "obs": dict(getattr(self, "obs_status", {})),
+                "obs": self.obs_status_payload(),
                 "visual_sliders": dict(self.visual_slider_values),
                 "active_look_name": self.active_look_name,
                 "outputs": [
@@ -5799,7 +6421,7 @@ class ShowEngine:
         if command in {"videogame", "video_game", "game"}:
             return self.enter_manual_mode("videogame")
         if command == "spotify":
-            return self.enter_manual_mode("spotify")
+            return self.activate_spotify_source()
         if command == "resume":
             return self.resume_cdj()
         if command == "rebuild_music_index":
@@ -5901,6 +6523,15 @@ def system_confidence_payload(config: dict[str, Any], blt: dict[str, Any], show:
     for group_items in camera_controls.get("groups", {}).values():
         camera_items.extend(group_items)
     systems.append(udp_system("cameras", "Cameras", any(clean_osc_address(item.get("address", "")) for item in camera_items)))
+    runtime = runtime_dependency_status(config)
+    if not runtime.get("ok"):
+        systems.append({
+            "key": "runtime",
+            "label": "Python runtime",
+            "state": "offline",
+            "summary": "Dependency warning",
+            "detail": " ".join(runtime.get("warnings", [])) + f" Running {runtime.get('executable', '')}.",
+        })
     return systems
 
 
@@ -6153,6 +6784,56 @@ def make_preflight_payload(host: str, port: int) -> dict[str, Any]:
         "checks": checks,
         "summary": {"errors": len(errors), "warnings": len(warnings), "total": len(checks)},
     }
+def make_now_playing_payload() -> dict[str, Any]:
+    config = load_config()
+    public = ENGINE.now_playing.get_public_state()
+    source = text_value(public.get("source", "cdj")).casefold() or "cdj"
+    source_label = text_value(public.get("source_label", "")) or {
+        "cdj": "CDJ Beatlink",
+        "spotify": "Spotify",
+        "vinyl": "Record Playing",
+        "studio": "NO TALKING STUDIO",
+        "videogame": "Videogames",
+    }.get(source, source.title())
+
+    artwork_path = artwork_output_path(config)
+    has_artwork = artwork_path.exists() and artwork_path.is_file()
+    artwork_mtime = int(artwork_path.stat().st_mtime) if has_artwork else 0
+
+    title = text_value(public.get("title", ""))
+    artist = text_value(public.get("artist", ""))
+    album = text_value(public.get("album", ""))
+    full_track = text_value(public.get("full_track", "")) or " - ".join(part for part in (artist, title) if part)
+    track_key = text_value(public.get("track_key", public.get("track_info", full_track)))
+    state_version = "|".join([
+        config_revision(),
+        source,
+        track_key,
+        full_track,
+        str(public.get("state_version", "")),
+        str(artwork_mtime),
+    ])
+    return {
+        "source": source,
+        "source_label": source_label,
+        "title": title,
+        "artist": artist,
+        "album": album,
+        "full_track": full_track,
+        "track_info": text_value(public.get("track_info", "")),
+        "bpm": text_value(public.get("bpm", "")),
+        "player": text_value(public.get("player", "")),
+        "device": text_value(public.get("device", public.get("device_name", ""))),
+        "is_playing": bool(public.get("is_playing", False)),
+        "is_paused": bool(public.get("is_paused", False)),
+        "progress_ms": int(public.get("progress_ms") or 0),
+        "duration_ms": int(public.get("duration_ms") or 0),
+        "has_artwork": has_artwork,
+        "artwork_url": "/api/now-playing/artwork" if has_artwork else "",
+        "state_version": state_version,
+        "palette": {},
+    }
+
 def make_status_payload(host: str, port: int, include_settings: bool = True, poll_blt: bool = True) -> dict[str, Any]:
     config = load_config()
     connection = connection_payload(config, port)
@@ -6160,6 +6841,8 @@ def make_status_payload(host: str, port: int, include_settings: bool = True, pol
     ips = local_ipv4_addresses()
     remote_urls = [f"http://{ip}:{port}/" for ip in ips]
     blt = ENGINE.poll_blt(send_on_change=True) if poll_blt else ENGINE.blt_status_snapshot()
+    if ENGINE.manual_mode == "spotify":
+        ENGINE.poll_spotify_current(force=False)
     show = ENGINE.snapshot()
     payload = {
         "app": "NT Performance Hub",
@@ -6216,13 +6899,162 @@ def make_status_payload(host: str, port: int, include_settings: bool = True, pol
     return payload
 
 
+
+def dependency_import_status(module_name: str, label: str) -> dict[str, Any]:
+    try:
+        module = __import__(module_name)
+        return {
+            "module": module_name,
+            "label": label,
+            "ok": True,
+            "path": text_value(getattr(module, "__file__", "")),
+        }
+    except Exception as exc:
+        return {"module": module_name, "label": label, "ok": False, "error": str(exc)}
+
+
+def runtime_dependency_status(config: dict[str, Any] | None = None) -> dict[str, Any]:
+    config = config or load_config()
+    dependencies = {
+        "websocket_client": dependency_import_status("websocket", "websocket-client"),
+        "pillow": dependency_import_status("PIL", "Pillow"),
+        "mutagen": dependency_import_status("mutagen", "mutagen"),
+    }
+    warnings: list[str] = []
+    if bool(config.get("obs_enabled", False)) and not dependencies["websocket_client"].get("ok"):
+        warnings.append("OBS control is enabled, but websocket-client is missing in this Python runtime.")
+    if bool(config.get("use_artwork_palette", False)) and not dependencies["pillow"].get("ok"):
+        warnings.append("Artwork palette extraction is enabled, but Pillow is missing in this Python runtime.")
+    return {
+        "ok": not warnings,
+        "executable": sys.executable,
+        "version": sys.version.split()[0],
+        "dependencies": dependencies,
+        "warnings": warnings,
+    }
+
+
+def compact_command_payload(result: dict[str, Any]) -> dict[str, Any]:
+    compact: dict[str, Any] = {
+        "ok": bool(result.get("ok", False)),
+        "message": text_value(result.get("message", "")),
+    }
+    for key in ("sent", "artwork_written", "obs", "spotify", "palette", "files", "imported_keys"):
+        if key not in result:
+            continue
+        if key == "obs" and isinstance(result[key], dict):
+            compact[key] = ENGINE.obs_status_payload(result[key])
+        else:
+            compact[key] = result[key]
+    return compact
+
+
+def diagnostics_probe(label: str, fn: Any) -> dict[str, Any]:
+    start = time.perf_counter()
+    try:
+        result = fn()
+        return {"label": label, "ok": True, "ms": round((time.perf_counter() - start) * 1000, 1), "result": result}
+    except Exception as exc:
+        return {"label": label, "ok": False, "ms": round((time.perf_counter() - start) * 1000, 1), "error": str(exc)}
+
+
+def make_diagnostics_payload(host: str, port: int) -> dict[str, Any]:
+    config = load_config()
+    runtime = runtime_dependency_status(config)
+    targets = normalize_osc_targets(config.get("osc_targets", []), config)
+    enabled_targets = [target for target in targets if target.get("enabled") and target.get("host")]
+
+    def status_probe() -> dict[str, Any]:
+        payload = make_status_payload(host, port, include_settings=False, poll_blt=False)
+        return {
+            "bytes": len(json.dumps(payload)),
+            "manual_mode": payload.get("show", {}).get("manual_mode", ""),
+            "confidence_items": len(payload.get("confidence", [])),
+        }
+
+    def beatlink_probe() -> dict[str, Any]:
+        result = ENGINE.poll_blt(send_on_change=False, update_outputs=False)
+        context = result.get("context", {}) if isinstance(result, dict) else {}
+        return {
+            "ok": bool(result.get("ok")) if isinstance(result, dict) else False,
+            "status": text_value(result.get("status", "")) if isinstance(result, dict) else "",
+            "sources": len(result.get("sources", [])) if isinstance(result, dict) else 0,
+            "track": text_value(context.get("full_track", "")) if isinstance(context, dict) else "",
+        }
+
+    def artwork_match_probe() -> dict[str, Any]:
+        context = dict(ENGINE.latest_blt_context)
+        if not ENGINE.is_valid_blt_track_context(context):
+            return {"skipped": True, "reason": "No valid BeatLink track context yet."}
+        index = ENGINE.load_music_index()
+        match = find_best_track_match(context, index) if index else None
+        return {
+            "index_entries": len(index),
+            "matched": bool(match),
+            "score": round(match[1], 3) if match else 0,
+            "file": text_value(match[0].get("filename", match[0].get("path", ""))) if match else "",
+        }
+
+    def palette_probe() -> dict[str, Any]:
+        palette = ENGINE.extract_artwork_palette()
+        return {
+            "available": bool(palette.get("available", False)),
+            "colors": len(palette.get("colors", [])) if isinstance(palette.get("colors", []), list) else 0,
+            "message": text_value(palette.get("message", "")),
+        }
+
+    def osc_probe() -> dict[str, Any]:
+        return {
+            "enabled_targets": len(enabled_targets),
+            "targets": [f"{target.get('label', 'OSC')} {target.get('host')}:{target.get('port')}" for target in enabled_targets],
+            "delivery_channels": len(ENGINE.delivery_status),
+        }
+
+    def obs_probe() -> dict[str, Any]:
+        if not bool(config.get("obs_enabled", False)):
+            return {"skipped": True, "reason": "OBS control disabled."}
+        data = ENGINE.obs_websocket_request("GetVersion")
+        return ENGINE.sanitize_obs_response_data("info", data.get("responseData", {}))
+
+    def spotify_probe() -> dict[str, Any]:
+        cfg = spotify_config(config)
+        if not cfg["spotify_enabled"]:
+            return {"skipped": True, "reason": "Spotify disabled."}
+        status = ENGINE.poll_spotify_current(force=True, update_outputs=False)
+        current = status.get("current", {}) if isinstance(status, dict) else {}
+        return {
+            "connected": bool(status.get("connected")) if isinstance(status, dict) else False,
+            "title": text_value(current.get("title", "")) if isinstance(current, dict) else "",
+            "is_playing": bool(current.get("is_playing", False)) if isinstance(current, dict) else False,
+            "last_error": text_value(status.get("last_error", "")) if isinstance(status, dict) else "",
+        }
+
+    return {
+        "ok": True,
+        "time": datetime.now().isoformat(timespec="seconds"),
+        "runtime": runtime,
+        "probes": {
+            "api_status": diagnostics_probe("api/status lightweight", status_probe),
+            "beatlink_poll": diagnostics_probe("BeatLink poll", beatlink_probe),
+            "artwork_match": diagnostics_probe("artwork match", artwork_match_probe),
+            "palette_extraction": diagnostics_probe("palette extraction", palette_probe),
+            "osc_sends": diagnostics_probe("OSC send readiness", osc_probe),
+            "obs_command": diagnostics_probe("OBS GetVersion", obs_probe),
+            "spotify_poll": diagnostics_probe("Spotify poll", spotify_probe),
+        },
+    }
+
 class AppRequestHandler(SimpleHTTPRequestHandler):
     server_version = "NTPerformanceHub"
     quiet_access_log_paths = {
         "/api/artwork/current",
+        "/api/now-playing",
+        "/api/now-playing/artwork",
+        "/api/now-playing/events",
         "/api/generative/state",
         "/api/identity",
         "/api/preflight",
+        "/api/diagnostics",
         "/api/status",
         "/health",
     }
@@ -6243,8 +7075,14 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/identity":
             self.send_json({"ok": True, "app": {"name": "NT Performance Hub"}})
             return
+        if parsed.path == "/api/admin/session":
+            self.send_json({"ok": True, "admin_required": False, "admin_token": ""})
+            return
         if parsed.path == "/api/preflight":
             self.send_json(make_preflight_payload(self.server.bind_host, self.server.server_port))
+            return
+        if parsed.path == "/api/diagnostics":
+            self.send_json(make_diagnostics_payload(self.server.bind_host, self.server.server_port))
             return
         if parsed.path == "/api/status":
             query = parse_qs(parsed.query)
@@ -6254,6 +7092,22 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/config":
             self.send_json({"ok": True, "config": ENGINE.config_payload(), "state": ENGINE.snapshot()})
+            return
+        if parsed.path == "/spotify/login":
+            try:
+                self.send_json(ENGINE.spotify_login())
+            except ValueError as exc:
+                self.send_json({"ok": False, "message": str(exc), "spotify": ENGINE.spotify_status()}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if parsed.path == "/spotify/callback":
+            try:
+                result = ENGINE.spotify_callback(parse_qs(parsed.query))
+                self.send_html_message("Spotify connected", result.get("message", "Spotify connected."))
+            except Exception as exc:
+                self.send_html_message("Spotify connection failed", str(exc), status=HTTPStatus.BAD_REQUEST)
+            return
+        if parsed.path == "/api/spotify/status":
+            self.send_json({"ok": True, "spotify": ENGINE.poll_spotify_current(force=True), "config": ENGINE.config_payload(), "state": ENGINE.snapshot()})
             return
         if parsed.path == "/api/osc-backups":
             self.send_json({"ok": True, "files": list_osc_backups(), "directory": str(OSC_BACKUP_DIR)})
@@ -6267,6 +7121,40 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/visuals/generative":
             self.path = "/generative.html"
             return super().do_GET()
+        if parsed.path == "/display/now-playing":
+            self.send_web_file(WEB_ROOT / "now-playing-display.html", "text/html; charset=utf-8")
+            return
+        if parsed.path == "/api/now-playing":
+            self.send_json({"ok": True, "now_playing": make_now_playing_payload()})
+            return
+        if parsed.path == "/api/now-playing/artwork":
+            self.send_current_artwork()
+            return
+        if parsed.path == "/api/now-playing/events":
+            self.send_now_playing_events()
+            return
+        if parsed.path == "/api/spotify/activate":
+            try:
+                self.read_json_body()
+                self.send_json(ENGINE.activate_spotify_source())
+            except Exception as exc:
+                self.send_json({"ok": False, "message": str(exc), "spotify": ENGINE.spotify_status(), "config": ENGINE.config_payload(), "state": ENGINE.snapshot()}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if parsed.path == "/api/spotify/disconnect":
+            self.read_json_body()
+            self.send_json(ENGINE.disconnect_spotify())
+            return
+        if parsed.path == "/api/spotify/activate":
+            try:
+                self.read_json_body()
+                self.send_json(ENGINE.activate_spotify_source())
+            except Exception as exc:
+                self.send_json({"ok": False, "message": str(exc), "spotify": ENGINE.spotify_status(), "config": ENGINE.config_payload(), "state": ENGINE.snapshot()}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if parsed.path == "/api/spotify/disconnect":
+            self.read_json_body()
+            self.send_json(ENGINE.disconnect_spotify())
+            return
         if parsed.path == "/api/presets":
             self.send_json({"ok": True, "presets": ENGINE.preset_payload(), "state": ENGINE.snapshot()})
             return
@@ -6284,13 +7172,18 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/command":
+            query = parse_qs(parsed.query)
+            compact = text_value(query.get("compact", [""])[0]).casefold() in {"1", "true", "yes"}
             try:
                 payload = self.read_json_body()
-                self.send_json(ENGINE.handle_command(payload))
+                result = ENGINE.handle_command(payload)
+                self.send_json(compact_command_payload(result) if compact else result)
             except ValueError as exc:
-                self.send_json({"ok": False, "message": str(exc), "state": ENGINE.snapshot()}, status=HTTPStatus.BAD_REQUEST)
+                result = {"ok": False, "message": str(exc), "state": ENGINE.snapshot()}
+                self.send_json(compact_command_payload(result) if compact else result, status=HTTPStatus.BAD_REQUEST)
             except Exception as exc:
-                self.send_json({"ok": False, "message": f"Command failed: {exc}", "state": ENGINE.snapshot()}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                result = {"ok": False, "message": f"Command failed: {exc}", "state": ENGINE.snapshot()}
+                self.send_json(compact_command_payload(result) if compact else result, status=HTTPStatus.INTERNAL_SERVER_ERROR)
             return
         if parsed.path == "/api/config":
             try:
@@ -6300,6 +7193,17 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
                 self.send_json({"ok": False, "message": str(exc), "config": ENGINE.config_payload(), "state": ENGINE.snapshot()}, status=HTTPStatus.BAD_REQUEST)
             except Exception as exc:
                 self.send_json({"ok": False, "message": f"Settings save failed: {exc}", "config": ENGINE.config_payload(), "state": ENGINE.snapshot()}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+        if parsed.path == "/api/spotify/activate":
+            try:
+                self.read_json_body()
+                self.send_json(ENGINE.activate_spotify_source())
+            except Exception as exc:
+                self.send_json({"ok": False, "message": str(exc), "spotify": ENGINE.spotify_status(), "config": ENGINE.config_payload(), "state": ENGINE.snapshot()}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if parsed.path == "/api/spotify/disconnect":
+            self.read_json_body()
+            self.send_json(ENGINE.disconnect_spotify())
             return
         if parsed.path == "/api/presets":
             try:
@@ -6356,6 +7260,40 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
+    def send_web_file(self, path: Path, content_type: str | None = None) -> None:
+        if not path.exists() or not path.is_file():
+            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+            return
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            self.send_error(HTTPStatus.INTERNAL_SERVER_ERROR, f"Could not read file: {exc}")
+            return
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", content_type or mimetypes.guess_type(str(path))[0] or "application/octet-stream")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def send_now_playing_events(self) -> None:
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Connection", "keep-alive")
+        self.end_headers()
+        previous = ""
+        for _ in range(120):
+            state = make_now_playing_payload()
+            payload = json.dumps(state)
+            if payload != previous:
+                try:
+                    self.wfile.write(f"event: now-playing\ndata: {payload}\n\n".encode("utf-8"))
+                    self.wfile.flush()
+                except (BrokenPipeError, ConnectionError, OSError):
+                    return
+                previous = payload
+            time.sleep(1)
+
     def read_json_body(self) -> dict[str, Any]:
         length = int(self.headers.get("Content-Length", "0") or "0")
         if length <= 0:
@@ -6368,6 +7306,16 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
         if not isinstance(payload, dict):
             raise ValueError("JSON body must be an object.")
         return payload
+
+    def send_html_message(self, title: str, message: str, status: HTTPStatus = HTTPStatus.OK) -> None:
+        safe_title = html.escape(title)
+        safe_message = html.escape(message)
+        body = f"""<!doctype html><html><head><meta charset="utf-8"><title>{safe_title}</title></head><body><h1>{safe_title}</h1><p>{safe_message}</p><p>You can close this tab and return to NT Performance Hub.</p></body></html>""".encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def send_json(self, payload: dict[str, Any], status: HTTPStatus = HTTPStatus.OK) -> None:
         body = json.dumps(payload, indent=2).encode("utf-8")
@@ -6416,6 +7364,8 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
 
 
 class AppServer(ThreadingHTTPServer):
+    daemon_threads = True
+    block_on_close = False
     bind_host: str
 
 
@@ -6446,5 +7396,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

@@ -1,4 +1,5 @@
 __pycache__/
+tmp*/
 *.pyc
 .venv/
 music_library_index.json
@@ -7,9 +8,11 @@ performance_lighting_gui*_config.json
 visual_defaults.json
 config/*.json
 data/*.json
+data/osc_backups/*.json
 !config/.gitkeep
 !config/app_config.example.json
 !data/.gitkeep
+!data/osc_backups/.gitkeep
 logs/*
 !logs/.gitkeep
 
@@ -26,3 +29,5 @@ data/current_artwork.*
 .env.*
 config/*secret*
 config/*token*
+data/spotify_tokens.json
+data/admin_token*.txt

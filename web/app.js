@@ -127,6 +127,18 @@ const spotifyArtworkHeight = document.querySelector("#spotifyArtworkHeight");
 const spotifyClientId = document.querySelector("#spotifyClientId");
 const spotifyRedirectUri = document.querySelector("#spotifyRedirectUri");
 const spotifyMarket = document.querySelector("#spotifyMarket");
+const spotifyTrackTemplate = document.querySelector("#spotifyTrackTemplate");
+const spotifyStatusBadge = document.querySelector("#spotifyStatusBadge");
+const spotifyRuntimeTitle = document.querySelector("#spotifyRuntimeTitle");
+const spotifyRuntimeArtist = document.querySelector("#spotifyRuntimeArtist");
+const spotifyRuntimeAlbum = document.querySelector("#spotifyRuntimeAlbum");
+const spotifyRuntimePlayback = document.querySelector("#spotifyRuntimePlayback");
+const spotifyRuntimeDevice = document.querySelector("#spotifyRuntimeDevice");
+const spotifyRuntimeLastPoll = document.querySelector("#spotifyRuntimeLastPoll");
+const spotifyRuntimeLastError = document.querySelector("#spotifyRuntimeLastError");
+const spotifyConnect = document.querySelector("#spotifyConnect");
+const spotifyDisconnect = document.querySelector("#spotifyDisconnect");
+const spotifyUseNowPlaying = document.querySelector("#spotifyUseNowPlaying");
 const saveNowPlayingOsc = document.querySelector("#saveNowPlayingOsc");
 const manualModeForm = document.querySelector("#manualModeForm");
 const vinylTrackText = document.querySelector("#vinylTrackText");
@@ -237,6 +249,11 @@ const overviewSequenceTransport = document.querySelector("#overviewSequenceTrans
 const overviewObsControls = document.querySelector("#overviewObsControls");
 const obsSectionControls = document.querySelector("#obsSectionControls");
 const overviewMacroButtons = document.querySelector("#overviewMacroButtons");
+const macrosList = document.querySelector("#macrosList");
+const macrosPager = document.querySelector("#macrosPager");
+const macrosStatus = document.querySelector("#macrosStatus");
+const addOscButtonMacro = document.querySelector("#addOscButtonMacro");
+const addOscClockMacro = document.querySelector("#addOscClockMacro");
 const overviewReapplyLook = document.querySelector("#overviewReapplyLook");
 const overviewDefaultLook = document.querySelector("#overviewDefaultLook");
 const overviewPulseHold = document.querySelector("#overviewPulseHold");
@@ -275,6 +292,9 @@ let visualsOscDirty = false;
 let camerasOscDirty = false;
 let nowPlayingOscDirty = false;
 let manualModeDirty = false;
+let macroDrafts = [];
+let macrosPage = 0;
+const MACROS_PER_PAGE = 5;
 let optimisticNowPlayingMode = "";
 let optimisticPerformanceLookName = "";
 let activeNowPlayingSource = "";
@@ -289,6 +309,64 @@ let activeSequenceCueIndex = 0;
 let showSequenceDirty = false;
 let showSequenceTimer = null;
 let showSequenceRunning = false;
+
+const NT_ADMIN_TOKEN_STORAGE_KEY = "ntPerformanceHubAdminToken";
+const ntNativeFetch = window.fetch.bind(window);
+let ntAdminToken = localStorage.getItem(NT_ADMIN_TOKEN_STORAGE_KEY) || "";
+
+function isSameOriginRequest(input) {
+  try {
+    const url = new URL(typeof input === "string" ? input : input.url, window.location.href);
+    return url.origin === window.location.origin;
+  } catch (_error) {
+    return false;
+  }
+}
+
+function shouldAttachAdminToken(input) {
+  if (!isSameOriginRequest(input)) return false;
+  const url = new URL(typeof input === "string" ? input : input.url, window.location.href);
+  if (url.pathname === "/api/admin/session") return false;
+  return url.pathname.startsWith("/api/") || url.pathname === "/spotify/login";
+}
+
+function withAdminToken(input, init = {}) {
+  const nextInit = { ...init };
+  const headers = new Headers(nextInit.headers || (input instanceof Request ? input.headers : undefined));
+  if (ntAdminToken) headers.set("X-NT-Admin-Token", ntAdminToken);
+  nextInit.headers = headers;
+  return nextInit;
+}
+
+window.fetch = async (input, init = {}) => {
+  if (!shouldAttachAdminToken(input)) return ntNativeFetch(input, init);
+  let response = await ntNativeFetch(input, withAdminToken(input, init));
+  if (response.status !== 401) return response;
+  const entered = window.prompt("NT Performance Hub admin token required for controls on this device.");
+  if (!entered) return response;
+  ntAdminToken = entered.trim();
+  localStorage.setItem(NT_ADMIN_TOKEN_STORAGE_KEY, ntAdminToken);
+  response = await ntNativeFetch(input, withAdminToken(input, init));
+  if (response.status === 401) {
+    localStorage.removeItem(NT_ADMIN_TOKEN_STORAGE_KEY);
+    ntAdminToken = "";
+  }
+  return response;
+};
+
+async function bootstrapAdminSession() {
+  if (ntAdminToken) return;
+  try {
+    const response = await ntNativeFetch("/api/admin/session", { cache: "no-store" });
+    const result = await response.json();
+    if (response.ok && result.ok && result.admin_token) {
+      ntAdminToken = String(result.admin_token);
+      localStorage.setItem(NT_ADMIN_TOKEN_STORAGE_KEY, ntAdminToken);
+    }
+  } catch (_error) {
+    // Remote display/control clients do not receive the local admin bootstrap token.
+  }
+}
 let showSequencePaused = false;
 let showSequenceStepIndex = 0;
 let showSequenceStartedAt = 0;
@@ -1820,7 +1898,7 @@ function makeOverviewBpmSurface(show = latestShow, options = {}) {
 }
 
 function nowPlayingModeLabel(mode) {
-  if (mode === "cdj" || !mode) return "CDJ metadata";
+  if (mode === "cdj" || !mode) return "CDJ Beatlink";
   if (mode === "vinyl") return "Vinyl";
   if (mode === "studio") return "Studio";
   if (mode === "videogame") return "Videogames";
@@ -1935,7 +2013,7 @@ function renderOverviewNowPlaying(status) {
   const metaText = hasTrack
     ? [track.artist, track.bpm ? `${track.bpm} BPM` : "", track.player || track.player_number].filter(Boolean).join(" / ")
     : isCdjMode
-      ? "CDJ / BLT"
+      ? "CDJ Beatlink"
       : "Manual mode";
 
   overviewNowPlaying.replaceChildren();
@@ -1960,7 +2038,7 @@ function renderOverviewNowPlaying(status) {
   const actions = document.createElement("div");
   actions.className = "overview-now-playing-buttons";
   [
-    ["Resume CDJ", "resume", isCdjMode],
+    ["CDJ Beatlink", "resume", isCdjMode],
     ["Vinyl", "vinyl", mode === "vinyl"],
     ["Studio", "studio", mode === "studio"],
     ["Videogames", "videogame", mode === "videogame"],
@@ -2953,32 +3031,475 @@ function renderOverviewObsControls(show = latestShow) {
   renderObsControlsInto(obsSectionControls, show);
 }
 
+function macroTypeLabel(type) {
+  return type === "osc_clock" ? "OSC Clock" : "OSC Button";
+}
+
+function macroStatusFor(id) {
+  return latestShow?.macro_status?.[id] || appSettings?.macro_status?.[id] || {};
+}
+
+function macroClockPreview(macro) {
+  const now = new Date();
+  let text = "";
+  if ((macro.time_format || "12h") === "24h") {
+    text = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  } else {
+    const hour = now.getHours() % 12 || 12;
+    text = `${hour}:${String(now.getMinutes()).padStart(2, "0")} ${now.getHours() < 12 ? "AM" : "PM"}`;
+  }
+  return `${macro.prefix || ""}${text}${macro.suffix || ""}`;
+}
+
+function enabledOscTargets() {
+  return (appSettings?.osc_targets || []).filter((target) => target.enabled !== false && target.host);
+}
+
+function macroTargetPicker(macro) {
+  const wrap = document.createElement("div");
+  wrap.className = "macro-target-picker";
+  const selected = new Set(macro.target_ids || []);
+  const targets = enabledOscTargets();
+  if (!targets.length) {
+    const empty = document.createElement("small");
+    empty.textContent = "No enabled OSC targets configured.";
+    wrap.append(empty);
+    return wrap;
+  }
+  const hint = document.createElement("small");
+  hint.textContent = selected.size ? "Selected destinations" : "All enabled destinations";
+  wrap.append(hint);
+  for (const target of targets) {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.name = `macro_target_${macro.id || "new"}`;
+    input.value = target.id;
+    input.checked = selected.has(target.id);
+    const span = document.createElement("span");
+    span.textContent = target.label || target.id;
+    label.append(input, span);
+    wrap.append(label);
+  }
+  return wrap;
+}
+
+function macroValueTypeSelect(value = "trigger") {
+  const select = document.createElement("select");
+  select.name = "value_type";
+  [["trigger", "Trigger / impulse"], ["float", "Float"], ["int", "Integer"], ["string", "String"], ["bool", "Boolean"]].forEach(([key, label]) => {
+    const option = document.createElement("option");
+    option.value = key;
+    option.textContent = label;
+    select.append(option);
+  });
+  select.value = value || "trigger";
+  return select;
+}
+
+function macroClockFormatSelect(value = "12h") {
+  const select = document.createElement("select");
+  select.name = "time_format";
+  [["12h", "12-hour"], ["24h", "24-hour"]].forEach(([key, label]) => {
+    const option = document.createElement("option");
+    option.value = key;
+    option.textContent = label;
+    select.append(option);
+  });
+  select.value = value || "12h";
+  return select;
+}
+
+function macroField(labelText, input) {
+  const label = document.createElement("label");
+  label.className = "macro-field";
+  const span = document.createElement("span");
+  span.textContent = labelText;
+  label.append(span, input);
+  return label;
+}
+
+function macroAddressField(macro) {
+  const address = document.createElement("input");
+  address.name = "address";
+  address.value = macro.address || "";
+  address.placeholder = "/composition/.../text";
+  const cell = document.createElement("div");
+  cell.className = "osc-address-cell";
+  cell.append(address, makeOscAddressBuilder(address));
+  return macroField("OSC Address", cell);
+}
+
+function collectMacroCardPayload(card) {
+  const type = card.dataset.macroType || "osc_button";
+  const payload = {
+    id: card.dataset.macroId || "",
+    type,
+    name: card.querySelector('[name="name"]')?.value || "",
+    enabled: Boolean(card.querySelector('[name="enabled"]')?.checked),
+    address: card.querySelector('[name="address"]')?.value || "",
+    target_ids: Array.from(card.querySelectorAll('.macro-target-picker input[type="checkbox"]:checked')).map((input) => input.value),
+  };
+  if (type === "osc_clock") {
+    payload.time_format = card.querySelector('[name="time_format"]')?.value || "12h";
+    payload.prefix = card.querySelector('[name="prefix"]')?.value || "";
+    payload.suffix = card.querySelector('[name="suffix"]')?.value || "";
+  } else {
+    payload.value_type = card.querySelector('[name="value_type"]')?.value || "trigger";
+    payload.value = card.querySelector('[name="value"]')?.value || "";
+  }
+  return payload;
+}
+
+function nextMacroDraftId() {
+  return `draft_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function syncMacroDraftsFromDom() {
+  if (!macrosList) return;
+  const drafts = [];
+  macrosList.querySelectorAll(".macro-card[data-macro-draft-id]").forEach((card) => {
+    const draft = collectMacroCardPayload(card);
+    draft.draft_id = card.dataset.macroDraftId;
+    draft.id = "";
+    drafts.push(draft);
+  });
+  macroDrafts = drafts;
+}
+
+function removeMacroDraft(draftId) {
+  macrosList?.querySelector(`[data-macro-draft-id="${draftId}"]`)?.remove();
+  macroDrafts = macroDrafts.filter((draft) => draft.draft_id !== draftId);
+  renderMacrosSection();
+  if (macrosStatus) macrosStatus.textContent = "Draft macro discarded.";
+}
+
+function applyMacroResult(result, fallbackStatus = "Macros updated.") {
+  if (result.config) {
+    appSettings = result.config;
+    presetData = result.config.preset_groups || presetData;
+  } else if (result.macros && appSettings) {
+    appSettings.macros = result.macros;
+    appSettings.macro_status = result.macro_status || appSettings.macro_status || {};
+  }
+  if (result.state) renderShowState(result.state, { full: true });
+  renderOverviewMacros();
+  renderMacrosSection();
+  if (macrosStatus) macrosStatus.textContent = result.message || fallbackStatus;
+}
+
+async function saveMacroCard(card) {
+  try {
+    if (macrosStatus) macrosStatus.textContent = "Saving macro...";
+    const response = await fetch("/api/macros", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ macro: collectMacroCardPayload(card) }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    if (card.dataset.macroDraftId) removeMacroDraft(card.dataset.macroDraftId);
+    applyMacroResult(result, "Macro saved.");
+    await loadStatus({ full: true, force: true });
+  } catch (error) {
+    if (macrosStatus) macrosStatus.textContent = String(error.message || error);
+  }
+}
+
+async function triggerMacro(id) {
+  try {
+    if (macrosStatus) macrosStatus.textContent = "Sending macro...";
+    const response = await fetch("/api/macros/trigger", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    applyMacroResult(result, "Macro sent.");
+  } catch (error) {
+    if (macrosStatus) macrosStatus.textContent = String(error.message || error);
+    showToast(String(error.message || error), true);
+  }
+}
+
+async function deleteMacro(id, name) {
+  if (!window.confirm(`Delete ${name || "this macro"}?`)) return;
+  try {
+    const response = await fetch("/api/macros/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    applyMacroResult(result, "Macro deleted.");
+    await loadStatus({ full: true, force: true });
+  } catch (error) {
+    if (macrosStatus) macrosStatus.textContent = String(error.message || error);
+  }
+}
+
+function makeMacroCard(macro) {
+  const card = document.createElement("article");
+  card.className = "macro-card";
+  card.dataset.macroId = macro.id || "";
+  if (macro.draft_id) card.dataset.macroDraftId = macro.draft_id;
+  card.dataset.macroType = macro.type || "osc_button";
+  const header = document.createElement("div");
+  header.className = "macro-card-header";
+  const title = document.createElement("div");
+  const type = document.createElement("span");
+  type.className = "macro-type-pill";
+  type.textContent = macroTypeLabel(macro.type);
+  const name = document.createElement("input");
+  name.name = "name";
+  name.value = macro.name || macroTypeLabel(macro.type);
+  title.append(type, name);
+  const enabled = document.createElement("label");
+  enabled.className = "macro-enabled-toggle";
+  const enabledInput = document.createElement("input");
+  enabledInput.type = "checkbox";
+  enabledInput.name = "enabled";
+  enabledInput.checked = macro.enabled !== false;
+  const enabledText = document.createElement("span");
+  enabledText.textContent = "Enabled";
+  enabled.append(enabledInput, enabledText);
+  header.append(title, enabled);
+  const fields = document.createElement("div");
+  fields.className = "macro-fields";
+  fields.append(macroAddressField(macro), macroField("Destinations", macroTargetPicker(macro)));
+  if (macro.type === "osc_clock") {
+    const format = macroClockFormatSelect(macro.time_format || "12h");
+    const prefix = document.createElement("input");
+    prefix.name = "prefix";
+    prefix.value = macro.prefix || "";
+    const suffix = document.createElement("input");
+    suffix.name = "suffix";
+    suffix.value = macro.suffix || "";
+    const preview = document.createElement("output");
+    preview.className = "macro-clock-preview";
+    const updatePreview = () => {
+      preview.value = macroClockPreview({ time_format: format.value, prefix: prefix.value, suffix: suffix.value });
+      preview.textContent = preview.value;
+    };
+    [format, prefix, suffix].forEach((input) => input.addEventListener("input", updatePreview));
+    updatePreview();
+    fields.append(macroField("Time Format", format), macroField("Prefix", prefix), macroField("Suffix", suffix), macroField("Preview", preview));
+  } else {
+    const valueType = macroValueTypeSelect(macro.value_type || "trigger");
+    const value = document.createElement("input");
+    value.name = "value";
+    value.value = macro.value ?? "";
+    value.placeholder = "1";
+    const syncValueState = () => {
+      value.disabled = valueType.value === "trigger";
+      if (valueType.value === "trigger") value.value = "1";
+      if (valueType.value === "bool") value.placeholder = "true";
+    };
+    valueType.addEventListener("input", syncValueState);
+    syncValueState();
+    fields.append(macroField("Value Type", valueType), macroField("Value", value));
+  }
+  const status = document.createElement("div");
+  status.className = "macro-runtime-status";
+  const runtime = macroStatusFor(macro.id);
+  if (macro.type === "osc_clock") {
+    status.textContent = runtime.error ? `Error: ${runtime.error}` : runtime.last_sent_value ? `Last sent ${runtime.last_sent_value} at ${runtime.last_sent_time || "-"}` : macro.enabled === false ? "Clock stopped." : "Clock waiting to send.";
+    status.classList.toggle("error", Boolean(runtime.error));
+  } else {
+    status.textContent = macro.enabled === false ? "Button disabled." : "Ready to trigger.";
+  }
+  const actions = document.createElement("div");
+  actions.className = "macro-actions";
+  const save = document.createElement("button");
+  save.type = "button";
+  save.textContent = "Save";
+  save.addEventListener("click", () => saveMacroCard(card));
+  const test = document.createElement("button");
+  test.type = "button";
+  test.textContent = macro.type === "osc_clock" ? "Send Now" : "Trigger";
+  test.disabled = !macro.id;
+  test.addEventListener("click", () => triggerMacro(macro.id));
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "danger";
+  remove.textContent = "Delete";
+  remove.disabled = !macro.id && !macro.draft_id;
+  remove.addEventListener("click", () => {
+    if (macro.draft_id) removeMacroDraft(macro.draft_id);
+    else deleteMacro(macro.id, macro.name);
+  });
+  actions.append(save, test, remove);
+  card.append(header, fields, status, actions);
+  return card;
+}
+
+function macrosForDisplay() {
+  return [...macroDrafts, ...(appSettings?.macros || [])];
+}
+
+function clampMacrosPage(total) {
+  const pageCount = Math.max(1, Math.ceil(total / MACROS_PER_PAGE));
+  macrosPage = Math.max(0, Math.min(macrosPage, pageCount - 1));
+  return pageCount;
+}
+
+function renderMacrosPager(total) {
+  if (!macrosPager) return;
+  macrosPager.replaceChildren();
+  const pageCount = clampMacrosPage(total);
+  const summary = document.createElement("span");
+  summary.className = "macros-page-summary";
+  const start = total ? macrosPage * MACROS_PER_PAGE + 1 : 0;
+  const end = Math.min(total, start + MACROS_PER_PAGE - 1);
+  summary.textContent = total ? `Macros ${start}-${end} of ${total}` : "No macros";
+  const previous = document.createElement("button");
+  previous.type = "button";
+  previous.textContent = "Previous";
+  previous.disabled = macrosPage <= 0;
+  previous.addEventListener("click", () => {
+    syncMacroDraftsFromDom();
+    macrosPage = Math.max(0, macrosPage - 1);
+    renderMacrosSection({ skipSync: true });
+  });
+  const next = document.createElement("button");
+  next.type = "button";
+  next.textContent = "Next";
+  next.disabled = macrosPage >= pageCount - 1;
+  next.addEventListener("click", () => {
+    syncMacroDraftsFromDom();
+    macrosPage = Math.min(pageCount - 1, macrosPage + 1);
+    renderMacrosSection({ skipSync: true });
+  });
+  macrosPager.append(summary, previous, next);
+}
+
+function renderMacrosSection(options = {}) {
+  if (!macrosList || !appSettings) return;
+  if (!options.skipSync && macrosList.querySelector(".macro-card[data-macro-draft-id]")) syncMacroDraftsFromDom();
+  if (!options.force && macrosList.contains(document.activeElement)) return;
+  const macros = macrosForDisplay();
+  const pageCount = clampMacrosPage(macros.length);
+  const pageItems = macros.slice(macrosPage * MACROS_PER_PAGE, macrosPage * MACROS_PER_PAGE + MACROS_PER_PAGE);
+  macrosList.replaceChildren();
+  renderMacrosPager(macros.length);
+  if (!macros.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted macro-empty-state";
+    empty.textContent = "No macros yet. Add an OSC Button or OSC Clock to begin.";
+    macrosList.append(empty);
+    return;
+  }
+  pageItems.forEach((macro) => macrosList.append(makeMacroCard(macro)));
+  if (macrosStatus && !options.keepStatus) {
+    const start = macrosPage * MACROS_PER_PAGE + 1;
+    const end = Math.min(macros.length, start + MACROS_PER_PAGE - 1);
+    macrosStatus.textContent = `Showing ${start}-${end} of ${macros.length} macros. Page ${macrosPage + 1} of ${pageCount}.`;
+  }
+}
+
+function addDraftMacro(type) {
+  syncMacroDraftsFromDom();
+  const draft = type === "osc_clock"
+    ? { draft_id: nextMacroDraftId(), id: "", type, name: "OSC Clock", enabled: true, address: "", target_ids: [], time_format: "12h", prefix: "", suffix: "" }
+    : { draft_id: nextMacroDraftId(), id: "", type, name: "OSC Button", enabled: true, address: "", target_ids: [], value_type: "trigger", value: "1" };
+  macroDrafts.unshift(draft);
+  macrosPage = 0;
+  renderMacrosSection({ skipSync: true, force: true, keepStatus: true });
+  const firstDraftInput = macrosList?.querySelector(`[data-macro-draft-id="${draft.draft_id}"] input[name="name"]`);
+  firstDraftInput?.focus();
+  firstDraftInput?.select();
+  if (macrosStatus) macrosStatus.textContent = "New macro added. Configure it, then Save.";
+}
 function renderOverviewMacros() {
   if (!overviewMacroButtons) return;
   overviewMacroButtons.replaceChildren();
-  ["OSC", "Hotkey", "Webhook", "Script"].forEach((label) => {
+  const macros = appSettings?.macros || [];
+  const buttons = macros.filter((macro) => macro.type === "osc_button" && macro.enabled !== false);
+  const clocks = macros.filter((macro) => macro.type === "osc_clock");
+  if (!buttons.length && !clocks.length) {
+    const empty = document.createElement("span");
+    empty.className = "muted overview-macro-empty";
+    empty.textContent = "No macros configured.";
+    overviewMacroButtons.append(empty);
+    return;
+  }
+  buttons.forEach((macro) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.disabled = true;
-    button.textContent = label;
+    button.className = "overview-macro-button";
+    button.textContent = macro.name || "OSC Button";
+    button.addEventListener("click", () => triggerMacro(macro.id));
     overviewMacroButtons.append(button);
   });
+  clocks.forEach((macro) => {
+    const status = macroStatusFor(macro.id);
+    const clock = document.createElement("div");
+    clock.className = "overview-macro-clock";
+    clock.classList.toggle("error", Boolean(status.error));
+    const name = document.createElement("strong");
+    name.textContent = macro.name || "OSC Clock";
+    const detail = document.createElement("span");
+    detail.textContent = status.error || status.last_sent_value || (macro.enabled === false ? "Stopped" : "Running");
+    clock.append(name, detail);
+    overviewMacroButtons.append(clock);
+  });
+}
+function currentSpotifyStatus(status = null) {
+  return status?.spotify || status?.config?.spotify_status || status?.settings?.spotify_status || appSettings?.spotify_status || latestShow?.spotify || null;
+}
+
+function spotifyNeedsConnection(status = null) {
+  const spotify = currentSpotifyStatus(status) || {};
+  return Boolean(appSettings?.spotify_enabled || spotify.enabled) && !Boolean(spotify.connected);
+}
+function spotifyCurrentDisplay(current = null) {
+  if (!current || current.item_type === "none") return { title: "No active Spotify playback", artist: "-", album: "-" };
+  const title = current.title || current.track_id || "Spotify track";
+  const artist = current.artist || "-";
+  return {
+    title: artist && artist !== "-" ? `${artist} - ${title}` : title,
+    artist,
+    album: current.album || "-",
+  };
+}
+
+function formatSpotifyDuration(ms) {
+  const value = Number(ms || 0);
+  if (!Number.isFinite(value) || value <= 0) return "0:00";
+  const totalSeconds = Math.floor(value / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
 }
 
 function renderSpotifyStatus(status = null) {
-  if (!spotifyAuthStatus) return;
-  const enabled = Boolean(appSettings?.spotify_enabled);
-  const ready = Boolean(appSettings?.spotify_auth_ready);
-  const mode = status?.show?.manual_mode || latestShow?.manual_mode || "cdj";
-  if (!enabled) {
-    spotifyAuthStatus.textContent = "Disabled";
-  } else if (!ready) {
-    spotifyAuthStatus.textContent = "Needs Client ID";
-  } else if (mode === "spotify") {
-    spotifyAuthStatus.textContent = "Spotify display active";
-  } else {
-    spotifyAuthStatus.textContent = "Ready for login build";
+  const spotify = currentSpotifyStatus(status) || {};
+  const current = spotify.current || null;
+  const display = spotifyCurrentDisplay(current);
+  const enabled = Boolean(appSettings?.spotify_enabled || spotify.enabled);  const connected = Boolean(spotify.connected);
+  const active = Boolean(spotify.active_source);
+  if (spotifyAuthStatus) {
+    if (active) spotifyAuthStatus.textContent = "Spotify source active";    else if (connected) spotifyAuthStatus.textContent = "Connected; select Spotify as the Now Playing source.";
+    else if (enabled) spotifyAuthStatus.textContent = "Connect Spotify to use live Now Playing.";
+    else spotifyAuthStatus.textContent = "Disabled";
   }
+  if (spotifyStatusBadge) {
+    spotifyStatusBadge.textContent = active ? "Active" : connected ? "Connected" : "Disconnected";
+    spotifyStatusBadge.classList.toggle("enabled", active || connected);
+  }
+  if (spotifyRuntimeTitle) spotifyRuntimeTitle.textContent = display.title;
+  if (spotifyRuntimeArtist) spotifyRuntimeArtist.textContent = display.artist;
+  if (spotifyRuntimeAlbum) spotifyRuntimeAlbum.textContent = display.album;
+  if (spotifyRuntimePlayback) {
+    const playbackState = current?.is_playing ? "Playing" : current ? "Paused" : "Idle";
+    const progress = `${formatSpotifyDuration(current?.progress_ms)} / ${formatSpotifyDuration(current?.duration_ms)}`;
+    spotifyRuntimePlayback.textContent = current && current.item_type !== "none" ? `${playbackState} (${progress})` : playbackState;
+  }
+  if (spotifyRuntimeDevice) spotifyRuntimeDevice.textContent = current?.device_name || "-";
+  if (spotifyRuntimeLastPoll) spotifyRuntimeLastPoll.textContent = spotify.last_poll || spotify.last_success || "-";
+  if (spotifyRuntimeLastError) spotifyRuntimeLastError.textContent = spotify.last_error || "-";
 }
 function resizeLiveDeckCards() {
   if (!liveDeckGrid) return;
@@ -3628,6 +4149,7 @@ function renderShowState(show, options = {}) {
     renderGeneratorQuickPresets();
   }
   if (full || active === "sequencerSection") renderSequenceTimingTools();
+  if (full || active === "macrosSection") renderMacrosSection();
   if (full || active === "liveDeckSection") {
     renderLiveDeck(show);
     renderPerformanceSurfaces();
@@ -3685,6 +4207,8 @@ function renderManualModeForm() {
     if (spotifyClientId) spotifyClientId.value = appSettings.spotify_client_id || "";
     if (spotifyRedirectUri) spotifyRedirectUri.value = appSettings.spotify_redirect_uri || "http://127.0.0.1:8080/spotify/callback";
     if (spotifyMarket) spotifyMarket.value = appSettings.spotify_market || "US";
+    if (spotifyTrackTemplate) spotifyTrackTemplate.value = appSettings.spotify_track_template || "{artist} - {title}";
+    renderSpotifyStatus({ spotify: appSettings.spotify_status });
   }
 }
 
@@ -3703,7 +4227,7 @@ function nowPlayingSourceForMode(mode) {
 function renderNowPlayingSourceTabs(show = latestShow) {
   const mode = optimisticNowPlayingMode || show?.manual_mode || "cdj";
   const source = activeNowPlayingSource || nowPlayingSourceForMode(mode);
-  const labels = { beatlink: "BeatLink Settings", spotify: "Spotify Settings", manual: "Manual Settings" };
+  const labels = { beatlink: "CDJ Beatlink Settings", spotify: "Spotify Settings", manual: "Manual Settings" };
   if (nowPlayingSourceStatus) nowPlayingSourceStatus.textContent = `Live: ${nowPlayingModeLabel(mode)}`;
   if (nowPlayingSettingsLabel) nowPlayingSettingsLabel.textContent = labels[source] || "Now Playing Settings";
   document.querySelectorAll("[data-now-playing-source]").forEach((button) => {
@@ -3773,44 +4297,55 @@ function renderTrackMetadata(status) {
   const show = status.show || {};
   const blt = status.blt || {};
   const track = blt.context || {};
-  const isCdjMode = (show.manual_mode || "cdj") === "cdj";
+  const modeValue = show.manual_mode || "cdj";
+  const isCdjMode = modeValue === "cdj";
+  const isSpotifyMode = modeValue === "spotify";
+  const spotifyStatus = currentSpotifyStatus(status) || {};
+  const spotifyCurrent = spotifyStatus.current || null;
+  const hasSpotifyTrack = Boolean(isSpotifyMode && spotifyCurrent && spotifyCurrent.item_type !== "none" && (spotifyCurrent.title || spotifyCurrent.track_id || spotifyCurrent.track_uri));
   const hasTrack = Boolean(isCdjMode && blt.ok && (track.title || track.artist || track.full_track));
-  const manualText = manualModeText(show.manual_mode) || `${show.manual_mode || "manual"} mode`;
+  const manualText = manualModeText(modeValue) || `${modeValue || "manual"} mode`;
+  const spotifyDisplay = spotifyCurrentDisplay(spotifyCurrent);
+  const blankSpotify = isSpotifyMode && !hasSpotifyTrack;
   trackNowPlaying.textContent = hasTrack
     ? track.full_track || track.title || "BeatLink track loaded"
-    : isCdjMode
-      ? blt.status || "Waiting for BeatLink watcher data"
-      : manualText;
+    : hasSpotifyTrack
+      ? spotifyDisplay.title
+      : isCdjMode
+        ? blt.status || "Waiting for BeatLink watcher data"
+        : blankSpotify
+          ? ""
+          : manualText;
   const nowPlaying = trackNowPlaying.textContent;
-  const artist = hasTrack ? track.artist || "-" : isCdjMode ? "-" : "manual mode";
-  const album = hasTrack ? track.album || "-" : isCdjMode ? "-" : show.manual_mode || "-";
-  const bpm = hasTrack ? track.bpm || "-" : isCdjMode ? "-" : show.bpm ? `${show.bpm}` : "-";
-  const player = hasTrack ? track.player || track.player_number || "-" : isCdjMode ? "-" : show.manual_mode || "-";
-  const mode = isCdjMode ? "CDJ / BLT" : `${show.manual_mode || "manual"} mode`;
+  const artist = hasTrack ? track.artist || "-" : hasSpotifyTrack ? spotifyDisplay.artist : blankSpotify ? "" : isCdjMode ? "-" : "manual mode";
+  const album = hasTrack ? track.album || "-" : hasSpotifyTrack ? spotifyDisplay.album : blankSpotify ? "" : isCdjMode ? "-" : modeValue || "-";
+  const bpm = hasTrack ? track.bpm || "-" : blankSpotify ? "" : isCdjMode ? "-" : show.bpm ? `${show.bpm}` : "-";
+  const player = hasTrack ? track.player || track.player_number || "-" : hasSpotifyTrack ? spotifyCurrent.device_name || "Spotify" : blankSpotify ? "" : isCdjMode ? "-" : modeValue || "-";
+  const displayMode = isCdjMode ? "CDJ Beatlink" : isSpotifyMode ? "Spotify" : `${modeValue || "manual"} mode`;
   if (liveTrackNowPlaying) liveTrackNowPlaying.textContent = nowPlaying;
   if (liveTrackArtist) liveTrackArtist.textContent = artist;
   if (liveTrackBpm) liveTrackBpm.textContent = bpm;
   if (liveTrackPlayer) liveTrackPlayer.textContent = player;
-  if (liveTrackMode) liveTrackMode.textContent = mode;
+  if (liveTrackMode) liveTrackMode.textContent = displayMode;
   perfTrackNowPlaying.textContent = nowPlaying;
   perfTrackArtist.textContent = artist;
   perfTrackAlbum.textContent = album;
   perfTrackBpm.textContent = bpm;
   perfTrackPlayer.textContent = player;
-  perfTrackMode.textContent = mode;
-  trackTitle.textContent = hasTrack ? track.title || "-" : isCdjMode ? "-" : manualText;
+  perfTrackMode.textContent = displayMode;
+  trackTitle.textContent = hasTrack ? track.title || "-" : hasSpotifyTrack ? spotifyCurrent.title || "-" : blankSpotify ? "" : isCdjMode ? "-" : manualText;
   trackArtist.textContent = artist;
   trackAlbum.textContent = album;
   trackBpm.textContent = bpm;
   trackPlayer.textContent = player;
-  trackDevice.textContent = hasTrack ? track.device_name || "-" : isCdjMode ? "-" : "remote";
-  trackMatchedFile.textContent = hasTrack ? track.matched_file || status.artwork?.matched_file || status.artwork?.status || "-" : status.artwork?.status || "-";
-  trackCommentFound.textContent = hasTrack ? track.comment || "No rekordbox comment found" : show.color_comment ? "Current generated color comment" : "-";
-  trackParsedValues.textContent = hasTrack ? track.track_info || "-" : show.color_comment || "-";
-  trackMissingValues.textContent = status.artwork?.status || (blt.ok ? "BeatLink data connected" : blt.error || "Resolved by current output state");
-  trackAppliedFrom.textContent = hasTrack ? "BeatLink params" : show.source || "-";
-  trackAutoSend.textContent = isCdjMode ? "CDJ / BLT mode" : "Manual artwork mode";
-  trackDailyLog.textContent = hasTrack ? "Polling BeatLink params.json for live metadata." : isCdjMode ? "Waiting for live BeatLink metadata." : "Manual mode sends the configured text and artwork.";
+  trackDevice.textContent = hasTrack ? track.device_name || "-" : hasSpotifyTrack ? spotifyCurrent.device_name || "Spotify" : blankSpotify ? "" : isCdjMode ? "-" : "remote";
+  trackMatchedFile.textContent = hasTrack ? track.matched_file || status.artwork?.matched_file || status.artwork?.status || "-" : hasSpotifyTrack ? spotifyCurrent.artwork_url || "Spotify artwork" : blankSpotify ? "" : status.artwork?.status || "-";
+  trackCommentFound.textContent = hasTrack ? track.comment || "No rekordbox comment found" : hasSpotifyTrack ? "Spotify metadata" : blankSpotify ? "" : show.color_comment ? "Current generated color comment" : "-";
+  trackParsedValues.textContent = hasTrack ? track.track_info || "-" : hasSpotifyTrack ? spotifyCurrent.track_uri || spotifyCurrent.track_id || "-" : blankSpotify ? "" : show.color_comment || "-";
+  trackMissingValues.textContent = hasSpotifyTrack ? "Spotify sends enabled Now Playing OSC outputs when activated." : blankSpotify ? "" : status.artwork?.status || (blt.ok ? "BeatLink data connected" : blt.error || "Resolved by current output state");
+  trackAppliedFrom.textContent = hasSpotifyTrack ? "Spotify" : hasTrack ? "BeatLink params" : blankSpotify ? "Spotify" : show.source || "-";
+  trackAutoSend.textContent = isCdjMode ? "CDJ Beatlink mode" : isSpotifyMode ? "Spotify mode" : "Manual artwork mode";
+  trackDailyLog.textContent = hasTrack ? "Polling BeatLink params.json for live metadata." : hasSpotifyTrack ? "Using live Spotify playback from the local API." : blankSpotify ? "" : isCdjMode ? "Waiting for live BeatLink metadata." : "Manual mode sends the configured text and artwork.";
   trackColorComment.textContent = show.color_comment || "-";
   renderOverviewNowPlaying(status);
   renderSpotifyStatus(status);
@@ -4027,6 +4562,7 @@ function renderLinkControls() {
 function renderOpacityControl(container, label, value, hasAddress, commandPayload, options = {}) {
   if (!container || container.contains(document.activeElement)) return;
   const selected = Math.max(0, Math.min(100, Math.round(Number(value ?? 100))));
+  const switchOnly = Boolean(options.switchOnly);
   container.replaceChildren();
 
   const title = document.createElement("div");
@@ -4037,17 +4573,19 @@ function renderOpacityControl(container, label, value, hasAddress, commandPayloa
   readout.textContent = `${selected}%`;
   title.append(name, readout);
 
-  const slider = document.createElement("input");
-  slider.type = "range";
-  slider.min = "0";
-  slider.max = "100";
-  slider.step = "1";
-  slider.value = String(selected);
-  slider.setAttribute("aria-label", label);
-
   const body = document.createElement("div");
   body.className = "opacity-body";
-  body.append(slider);
+  let slider = null;
+  if (!switchOnly) {
+    slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "100";
+    slider.step = "1";
+    slider.value = String(selected);
+    slider.setAttribute("aria-label", label);
+    body.append(slider);
+  }
 
   const quick = document.createElement("div");
   quick.className = "opacity-presets";
@@ -4066,7 +4604,7 @@ function renderOpacityControl(container, label, value, hasAddress, commandPayloa
   let lastSent = selected;
   const sendOpacity = (rawValue) => {
     const next = Math.max(0, Math.min(100, Math.round(Number(rawValue || 0))));
-    slider.value = String(next);
+    if (slider) slider.value = String(next);
     readout.textContent = `${next}%`;
     presetButtons.forEach((button) => button.classList.toggle("active", Number(button.dataset.amount) === next));
     if (next !== lastSent) {
@@ -4075,13 +4613,17 @@ function renderOpacityControl(container, label, value, hasAddress, commandPayloa
     }
   };
 
-  slider.addEventListener("input", () => sendOpacity(slider.value));
-  slider.addEventListener("change", () => sendOpacity(slider.value));
+  if (slider) {
+    slider.addEventListener("input", () => sendOpacity(slider.value));
+    slider.addEventListener("change", () => sendOpacity(slider.value));
+  }
   presetButtons.forEach((button) => button.addEventListener("click", () => sendOpacity(button.dataset.amount)));
   sendOpacity(selected);
 
   container.classList.toggle("needs-address", !hasAddress);
-  container.append(title, body, quick);
+  container.append(title);
+  if (!switchOnly) container.append(body);
+  container.append(quick);
 }
 
 function renderVisualOpacityControl() {
@@ -4169,7 +4711,7 @@ function renderCameraOpacityControl(groupKey, container, compact = false) {
     cameraOpacityValue(groupKey),
     Boolean(cameraOpacityAddress(groupKey)),
     (next) => ({ command: "camera_opacity", group: groupKey, value: next }),
-    { presets: [[0, "Off"], [50, "Blend"], [100, "On"]] },
+    { presets: [[0, "Off"], [100, "On"]], switchOnly: true },
   );
 }
 
@@ -5109,8 +5651,8 @@ function settingsField(key) {
 }
 
 const networkMachineSlots = [
-  { id: "laptop", label: "Laptop", host: "127.0.0.1", placeholders: ["127.0.0.1", "192.168.1.217", "Laptop Ethernet IP"] },
-  { id: "pc", label: "PC", host: "", placeholders: ["192.168.1.197", "PC WiFi IP", "PC Ethernet IP"] },
+  { id: "laptop", label: "Laptop", host: "127.0.0.1", placeholders: ["127.0.0.1", "192.168.1.50", "Laptop Ethernet IP"] },
+  { id: "pc", label: "PC", host: "", placeholders: ["192.168.1.60", "PC WiFi IP", "PC Ethernet IP"] },
   { id: "third", label: "Third Machine", host: "", placeholders: ["192.168.1.x", "Backup WiFi IP", "Backup Ethernet IP"] },
 ];
 
@@ -7220,7 +7762,7 @@ function selectForNowPlayingMode(name, selectedMode, onDirty = null) {
   select.name = name;
   const modes = [
     ["", "No change"],
-    ["cdj", "CDJ metadata"],
+    ["cdj", "CDJ Beatlink"],
     ["vinyl", `Vinyl: ${manualModeText("vinyl") || "Record Playing"}`],
     ["studio", `Studio: ${manualModeText("studio") || "NO TALKING STUDIO"}`],
     ["videogame", `Videogames: ${manualModeText("videogame") || "Ravenswatch"}`],
@@ -7534,6 +8076,7 @@ function collectManualModePayload() {
     spotify_client_id: spotifyClientId?.value || "",
     spotify_redirect_uri: spotifyRedirectUri?.value || "http://127.0.0.1:8080/spotify/callback",
     spotify_market: spotifyMarket?.value || "US",
+    spotify_track_template: spotifyTrackTemplate?.value || "{artist} - {title}",
     vinyl_track_text: vinylTrackText?.value || "Record Playing",
     vinyl_logo_path: vinylArtworkPath?.value || "",
     vinyl_artwork_width: vinylArtworkWidth?.value || "",
@@ -7578,6 +8121,51 @@ async function saveManualModePayload() {
   }
 }
 
+function applySpotifyApiResult(result = {}) {
+  if (result.config) {
+    appSettings = result.config;
+    presetData = result.config.preset_groups || presetData;
+    manualModeDirty = false;
+    renderManualModeForm();
+    renderSettingsForm();
+    renderObsSettingsForm();
+  }
+  if (result.state) renderShowState(result.state);
+  renderSpotifyStatus(result);
+  if (spotifyAuthStatus && result.message) spotifyAuthStatus.textContent = result.message;
+}
+
+async function fetchSpotifyEndpoint(path, payload = null) {
+  const options = payload === null
+    ? { method: "GET" }
+    : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
+  const response = await fetch(path, options);
+  let result = {};
+  try {
+    result = await response.json();
+  } catch (_error) {
+    result = { ok: false, message: `HTTP ${response.status}` };
+  }
+  if (!response.ok || result.ok === false) throw new Error(result.message || `HTTP ${response.status}`);
+  return result;
+}
+
+async function runSpotifyAction(path, payload = null, workingText = "Updating Spotify...") {
+  try {
+    if (spotifyAuthStatus) spotifyAuthStatus.textContent = workingText;
+    const result = await fetchSpotifyEndpoint(path, payload);
+    if (result.authorization_url) {
+      window.location.href = result.authorization_url;
+      return;
+    }
+    applySpotifyApiResult(result);
+    await loadStatus({ full: true, force: true });
+  } catch (error) {
+    const message = String(error.message || error);
+    if (spotifyAuthStatus) spotifyAuthStatus.textContent = message;
+    showToast(message, true);
+  }
+}
 async function rebuildMusicIndexPayload() {
   if (!rebuildMusicIndex) return;
   const previousText = rebuildMusicIndex.textContent;
@@ -8269,7 +8857,7 @@ function applyPaletteColor(color, target) {
 async function sendCommand(payload, options = {}) {
   try {
     if (!options.quiet && options.manualOverride !== false) markManualOverride();
-    const result = await sendCommandForResult(payload, options);
+    const result = await sendCommandForResult(payload, { ...options, compact: true });
     if (!options.quiet) showToast(result.message || "Command sent");
     if (result.config) {
       appSettings = result.config;
@@ -8290,13 +8878,16 @@ async function sendCommand(payload, options = {}) {
     await loadStatus();
     return result;
   } catch (error) {
+    optimisticNowPlayingMode = "";
+    renderSelectedButtons(latestShow || {});
     showToast(String(error.message || error), true);
     return null;
   }
 }
 
 async function sendCommandForResult(payload, _options = {}) {
-  const response = await fetch("/api/command", {
+  const url = _options.compact ? "/api/command?compact=1" : "/api/command";
+  const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -8353,12 +8944,12 @@ function scheduleStatusRefresh(show) {
   const running = Boolean(show?.bpm_running);
   const interval = Number(show?.bpm_interval_ms || 500);
   const visibleDelay = running ? Math.max(650, Math.min(1200, Math.round(interval * 8))) : 2800;
-  const settingsDelay = ["settingsSection", "nowPlayingSection", "obsSection"].includes(activeSectionId) ? Math.max(visibleDelay, 5000) : visibleDelay;
+  const settingsDelay = ["settingsSection", "nowPlayingSection", "obsSection", "macrosSection"].includes(activeSectionId) ? Math.max(visibleDelay, 5000) : visibleDelay;
   statusTimer = setTimeout(loadStatus, settingsDelay);
 }
 
 function statusPollOptions(options = {}) {
-  const full = Boolean(options.full) || !appSettings || !presetData || statusPollCount % FULL_STATUS_POLL_EVERY === 0 || ["settingsSection", "nowPlayingSection", "obsSection"].includes(activeSectionId);
+  const full = Boolean(options.full) || !appSettings || !presetData || statusPollCount % FULL_STATUS_POLL_EVERY === 0 || ["settingsSection", "nowPlayingSection", "obsSection", "macrosSection"].includes(activeSectionId);
   const blt = Boolean(options.full) || activeSectionId === "nowPlayingSection" || statusPollCount % BLT_STATUS_POLL_EVERY === 0;
   return { full, blt };
 }
@@ -8428,9 +9019,16 @@ async function loadStatus(options = {}) {
     if (perfTrackDisplay) {
       const track = status.blt?.context || {};
       const mode = status.show?.manual_mode || "cdj";
+      const spotify = currentSpotifyStatus(status) || {};
+      const spotifyCurrent = spotify.current || null;
+      const hasSpotifyTrack = Boolean(mode === "spotify" && spotifyCurrent && spotifyCurrent.item_type !== "none" && (spotifyCurrent.title || spotifyCurrent.track_id || spotifyCurrent.track_uri));
       perfTrackDisplay.textContent = mode === "cdj"
         ? track.full_track || track.title || status.show?.last_event || status.artwork.status || "Current display"
-        : manualModeText(mode) || status.show?.last_event || status.artwork.status || "Current display";
+        : hasSpotifyTrack
+          ? spotifyCurrentDisplay(spotifyCurrent).title
+          : mode === "spotify"
+            ? ""
+            : manualModeText(mode) || status.show?.last_event || status.artwork.status || "Current display";
     }
 
     const artworkToken = status.artwork.exists ? `${status.artwork.url}|${status.artwork.updated || ""}` : "";
@@ -8500,7 +9098,7 @@ function activateSection(sectionId, { scroll = true } = {}) {
   document.querySelectorAll(".section-view").forEach((view) => view.classList.toggle("active", view === section));
   if (window.location.hash !== `#${sectionId}`) history.replaceState(null, "", `#${sectionId}`);
   if (scroll) scheduleLiveSurfaceScroll();
-  loadStatus({ force: true, full: ["settingsSection", "nowPlayingSection", "obsSection"].includes(sectionId) });
+  loadStatus({ force: true, full: ["settingsSection", "nowPlayingSection", "obsSection", "macrosSection"].includes(sectionId) });
 }
 
 document.querySelectorAll(".tab-button").forEach((button) => {
@@ -8572,6 +9170,8 @@ bpmSlider.addEventListener("input", () => {
   refreshBpmSurfaces();
 });
 bpmSlider.addEventListener("change", sendBpmUpdate);
+if (addOscButtonMacro) addOscButtonMacro.addEventListener("click", () => addDraftMacro("osc_button"));
+if (addOscClockMacro) addOscClockMacro.addEventListener("click", () => addDraftMacro("osc_clock"));
 saveSettings.addEventListener("click", saveSettingsPayload);
 saveSettingsSticky.addEventListener("click", saveSettingsPayload);
 if (saveObsSettings) saveObsSettings.addEventListener("click", saveObsSettingsPayload);
@@ -8605,11 +9205,22 @@ if (nowPlayingSourceTabs) {
 }
 document.querySelectorAll("[data-now-playing-action-source]").forEach((button) => {
   button.addEventListener("click", () => {
-    optimisticNowPlayingMode = nowPlayingModeForCommand(button.dataset.command || "resume");
+    const command = button.dataset.command || "resume";
+    if (command === "spotify" && spotifyNeedsConnection()) {
+      optimisticNowPlayingMode = "";
+      activeNowPlayingSource = "spotify";
+      renderNowPlayingSourceTabs(latestShow);
+      renderSelectedButtons(latestShow || {});
+      runSpotifyAction("/spotify/login", null, "Preparing Spotify login...");
+      return;
+    }
+    optimisticNowPlayingMode = nowPlayingModeForCommand(command);
     renderSelectedButtons({ ...(latestShow || {}), manual_mode: optimisticNowPlayingMode });
-    sendCommand({ command: button.dataset.command });
+    sendCommand({ command });
   });
 });
+if (spotifyConnect) spotifyConnect.addEventListener("click", () => runSpotifyAction("/spotify/login", null, "Preparing Spotify login..."));if (spotifyUseNowPlaying) spotifyUseNowPlaying.addEventListener("click", () => runSpotifyAction("/api/spotify/activate", {}, "Activating Spotify source..."));
+if (spotifyDisconnect) spotifyDisconnect.addEventListener("click", () => runSpotifyAction("/api/spotify/disconnect", {}, "Disconnecting Spotify..."));
 if (saveManualModeText) saveManualModeText.addEventListener("click", saveManualModePayload);
 if (rebuildMusicIndex) rebuildMusicIndex.addEventListener("click", rebuildMusicIndexPayload);
 saveCurrentLook.addEventListener("click", saveLookFromBuilder);
@@ -8711,12 +9322,16 @@ function initializeTabletSetupPanels() {
   });
 }
 
-initializeTabletSetupPanels();
-renderDivisionButtons();
-applyLiveDeckVisibility();
-if (oscBackupFileNameInput && !oscBackupFileNameInput.value) oscBackupFileNameInput.value = defaultOscBackupFileName();
-loadOscBackupFiles();
-const initialSectionId = window.location.hash.slice(1);
-if (initialSectionId && document.querySelector(`#${initialSectionId}`)) activateSection(initialSectionId);
-loadStatus();
+async function initializeApp() {
+  await bootstrapAdminSession();
+  initializeTabletSetupPanels();
+  renderDivisionButtons();
+  applyLiveDeckVisibility();
+  if (oscBackupFileNameInput && !oscBackupFileNameInput.value) oscBackupFileNameInput.value = defaultOscBackupFileName();
+  loadOscBackupFiles();
+  const initialSectionId = window.location.hash.slice(1);
+  if (initialSectionId && document.querySelector(`#${initialSectionId}`)) activateSection(initialSectionId);
+  loadStatus();
+}
 
+initializeApp();

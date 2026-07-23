@@ -121,7 +121,7 @@ Examples:
 
 ```text
 D:\Music
-\\SHOW-PC\Music
+\\MUSIC-SERVER\Music
 ```
 
 Artwork and machine-specific settings live in:

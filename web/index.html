@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NT Performance Hub</title>
-    <link rel="stylesheet" href="/styles.css?v=20260713-visual-layer-off-rows">
+    <link rel="stylesheet" href="/styles.css?v=20260721-spotify-oauth">
   </head>
   <body>
     <main class="app">
@@ -679,12 +679,15 @@
         <section class="panel now-playing-source-panel">
           <div class="panel-title">
             <span>Now Playing Source</span>
-            <span class="panel-hint" id="nowPlayingSourceStatus">Live: CDJ</span>
+            <div class="panel-actions now-playing-display-actions">
+              <a class="display-page-link" href="/display/now-playing" target="_blank" rel="noopener">Open Display</a>
+              <span class="panel-hint" id="nowPlayingSourceStatus">Live: CDJ</span>
+            </div>
           </div>
           <div class="now-playing-command-box">
             <div class="source-block-title"><span>Live Triggers</span><strong>Now Playing output</strong></div>
             <div class="button-grid manual-buttons now-playing-action-grid">
-            <button type="button" data-command="resume" data-now-playing-action-source="beatlink">BeatLink / CDJ</button>
+            <button type="button" data-command="resume" data-now-playing-action-source="beatlink">CDJ Beatlink</button>
             <button type="button" data-command="spotify" data-now-playing-action-source="spotify">Spotify</button>
             <button type="button" data-command="vinyl" data-now-playing-action-source="manual"><span id="vinylModeButtonText">Record Playing</span></button>
             <button type="button" data-command="studio" data-now-playing-action-source="manual"><span id="studioModeButtonText">NO TALKING STUDIO</span></button>
@@ -695,7 +698,7 @@
           <div class="now-playing-edit-box">
             <div class="source-block-title"><span>Edit Settings</span><strong id="nowPlayingSettingsLabel">Source Settings</strong></div>
             <div id="nowPlayingSourceTabs" class="now-playing-source-tabs">
-            <button type="button" data-now-playing-source="beatlink">BeatLink Settings</button>
+            <button type="button" data-now-playing-source="beatlink">CDJ Beatlink Settings</button>
             <button type="button" data-now-playing-source="spotify">Spotify Settings</button>
             <button type="button" data-now-playing-source="manual">Manual Settings</button>
           </div>
@@ -717,12 +720,13 @@
                 <button id="rebuildMusicIndex" type="button">Rebuild Music Index</button>
                 <span>Scans Music Root, refreshes the MP3 match list, then retries artwork for the current CDJ track.</span>
               </div>
-              <p class="muted" id="beatlinkSourceStatus">CDJ mode uses BeatLink metadata and album artwork from the configured music library.</p>
+              <p class="muted" id="beatlinkSourceStatus">CDJ Beatlink mode uses BeatLink metadata and album artwork from the configured music library.</p>
             </div>
             <div class="now-playing-source-panel-body" data-now-playing-panel="spotify">
               <form id="spotifySourceForm" class="source-settings-form spotify-source-form">
                 <label class="source-check"><input id="spotifyEnabled" name="spotify_enabled" type="checkbox"><span>Enable Spotify Now Playing</span></label>
                 <label><span>Fallback Display Text</span><input id="spotifyTrackText" name="spotify_track_text" type="text" autocomplete="off"></label>
+                <label><span>Track Template</span><input id="spotifyTrackTemplate" name="spotify_track_template" type="text" autocomplete="off"></label>
                 <label><span>Static Artwork</span><input id="spotifyArtworkPath" name="spotify_artwork_path" type="text" autocomplete="off"></label>
                 <label><span>Spotify width</span><input id="spotifyArtworkWidth" name="spotify_artwork_width" type="number" min="1" autocomplete="off"></label>
                 <label><span>Spotify height</span><input id="spotifyArtworkHeight" name="spotify_artwork_height" type="number" min="1" autocomplete="off"></label>
@@ -730,6 +734,27 @@
                 <label><span>Redirect URI</span><input id="spotifyRedirectUri" name="spotify_redirect_uri" type="text" autocomplete="off"></label>
                 <label><span>Market</span><input id="spotifyMarket" name="spotify_market" type="text" autocomplete="off"></label>
               </form>
+              <div class="spotify-runtime-panel">
+                <div class="spotify-runtime-heading">
+                  <div>
+                    <span class="panel-kicker">Spotify Live Status</span>
+                    <strong id="spotifyRuntimeTitle">No Spotify track loaded</strong>
+                  </div>
+                  <span id="spotifyStatusBadge" class="status-pill">Disconnected</span>
+                </div>
+                <dl class="spotify-runtime-grid">
+                  <div><dt>Artist</dt><dd id="spotifyRuntimeArtist">-</dd></div>
+                  <div><dt>Album</dt><dd id="spotifyRuntimeAlbum">-</dd></div>
+                  <div><dt>Playback</dt><dd id="spotifyRuntimePlayback">-</dd></div>
+                  <div><dt>Device</dt><dd id="spotifyRuntimeDevice">-</dd></div>
+                  <div><dt>Last poll</dt><dd id="spotifyRuntimeLastPoll">-</dd></div>
+                  <div><dt>Last error</dt><dd id="spotifyRuntimeLastError">-</dd></div>
+                </dl>
+                <div class="spotify-runtime-actions">
+                  <button id="spotifyConnect" type="button">Connect</button>                  <button id="spotifyUseNowPlaying" type="button">Use Spotify Source</button>
+                  <button id="spotifyDisconnect" type="button">Disconnect</button>
+                </div>
+              </div>
               <p class="muted" id="spotifyAuthStatus">Spotify will stay local: client IDs and future tokens are stored in config files ignored by Git.</p>
             </div>
             <div class="now-playing-source-panel-body" data-now-playing-panel="manual">
@@ -855,18 +880,17 @@
       </section>
 
       <section id="macrosSection" class="section-view">
-        <section class="panel macros-wireframe-panel">
+        <section class="panel macros-control-panel">
           <div class="panel-title">
-            <span>Macro Buttons</span>
-            <span class="panel-hint">Function 09</span>
+            <span>Macros</span>
+            <div class="panel-actions">
+              <button id="addOscButtonMacro" type="button">Add OSC Button</button>
+              <button id="addOscClockMacro" type="button">Add OSC Clock</button>
+            </div>
           </div>
-          <div class="macro-wireframe-grid">
-            <button type="button" disabled>OSC Macro</button>
-            <button type="button" disabled>Hotkey Macro</button>
-            <button type="button" disabled>Webhook Macro</button>
-            <button type="button" disabled>Script Macro</button>
-          </div>
-          <p class="muted">This section is ready for configurable buttons. Next pass can let each macro send OSC, a local hotkey, a webhook, or a local script.</p>
+          <div id="macrosPager" class="macros-pager" aria-label="Macro pages"></div>
+          <div id="macrosList" class="macro-card-grid"></div>
+          <p class="muted" id="macrosStatus">Showing up to 5 macros per page. Add, save, trigger, or delete macros here.</p>
         </section>
       </section>
       <section id="settingsSection" class="section-view">
@@ -920,6 +944,6 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260713-visual-layer-off-rows"></script>
+    <script src="/app.js?v=20260721-spotify-oauth"></script>
   </body>
 </html>
