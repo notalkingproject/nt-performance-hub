@@ -531,11 +531,13 @@ CAMERA_GROUP_SPECS = (
     ("main_box", "Main Box Cams"),
     ("pip_box", "PIP Box Cams"),
     ("background", "Background Cams"),
+    ("visuals_cams", "Visuals Cams"),
 )
 DEFAULT_CAMERA_OPACITY_LABELS = {
     "main_box": "Main Box Mix",
     "pip_box": "PIP Box Mix",
     "background": "BG Cam Mix",
+    "visuals_cams": "Visuals Cam Mix",
 }
 DEFAULT_NOW_PLAYING_OPACITY_LABEL = "Now Playing Opacity"
 CAMERA_COLUMN_LABELS = ("Set 1", "Set 2", "Set 3", "Set 4")
@@ -1316,6 +1318,7 @@ def normalize_preset_links(raw: Any, preset_names: list[str]) -> dict[str, dict[
             "main_box_id": text_value(item.get("main_box_id", "")),
             "pip_box_id": text_value(item.get("pip_box_id", "")),
             "background_id": text_value(item.get("background_id", "")),
+            "visuals_cams_id": text_value(item.get("visuals_cams_id", "")),
             "scene_id": text_value(item.get("scene_id", "")),
             "generative_visual": normalize_generative_visual(generative_visual, DEFAULT_GENERATIVE_VISUAL) if generative_visual else {},
             **normalize_preset_link_bpm(item),
@@ -1329,6 +1332,7 @@ PERFORMANCE_BANK_CATEGORIES = (
     "main_box",
     "pip_box",
     "background",
+    "visuals_cams",
     "scenes",
     "generator",
 )
@@ -1359,7 +1363,7 @@ def normalize_performance_banks(
     camera_groups = camera_controls.get("groups", {}) if isinstance(camera_controls, dict) else {}
     camera_ids = {
         group: [text_value(item.get("id")) for item in camera_groups.get(group, [])]
-        for group in ("main_box", "pip_box", "background")
+        for group in ("main_box", "pip_box", "background", "visuals_cams")
     }
     scene_ids = [text_value(item.get("id")) for item in camera_controls.get("scenes", [])] if isinstance(camera_controls, dict) else []
     generator_ids = list(generative_presets.keys())
@@ -1369,6 +1373,7 @@ def normalize_performance_banks(
         "main_box": camera_ids["main_box"][:8],
         "pip_box": camera_ids["pip_box"][:8],
         "background": camera_ids["background"][:8],
+        "visuals_cams": camera_ids["visuals_cams"][:8],
         "scenes": scene_ids[:8],
         "generator": generator_ids[:8],
     }
@@ -1378,6 +1383,7 @@ def normalize_performance_banks(
         "main_box": camera_ids["main_box"],
         "pip_box": camera_ids["pip_box"],
         "background": camera_ids["background"],
+        "visuals_cams": camera_ids["visuals_cams"],
         "scenes": scene_ids,
         "generator": generator_ids,
     }
@@ -1427,7 +1433,7 @@ def normalize_panic_safe(
     groups = camera_controls.get("groups", {}) if isinstance(camera_controls, dict) else {}
     group_ids = {
         group: {text_value(item.get("id")) for item in groups.get(group, [])}
-        for group in ("main_box", "pip_box", "background")
+        for group in ("main_box", "pip_box", "background", "visuals_cams")
     }
     scene_ids = {text_value(item.get("id")) for item in camera_controls.get("scenes", [])} if isinstance(camera_controls, dict) else set()
     defaults = {
@@ -1435,6 +1441,7 @@ def normalize_panic_safe(
         "main_box_id": next((text_value(item.get("id")) for item in groups.get("main_box", []) if text_value(item.get("id")) in group_ids["main_box"]), ""),
         "pip_box_id": next((text_value(item.get("id")) for item in groups.get("pip_box", []) if text_value(item.get("id")) in group_ids["pip_box"]), ""),
         "background_id": next((text_value(item.get("id")) for item in groups.get("background", []) if text_value(item.get("id")) in group_ids["background"]), ""),
+        "visuals_cams_id": next((text_value(item.get("id")) for item in groups.get("visuals_cams", []) if text_value(item.get("id")) in group_ids["visuals_cams"]), ""),
         "scene_id": next((text_value(item.get("id")) for item in camera_controls.get("scenes", []) if text_value(item.get("id")) in scene_ids), ""),
     }
     requested_look = text_value(source.get("look", safe_look))
@@ -1444,6 +1451,7 @@ def normalize_panic_safe(
         "main_box_id": text_value(source.get("main_box_id", defaults["main_box_id"])) if text_value(source.get("main_box_id", defaults["main_box_id"])) in group_ids["main_box"] else defaults["main_box_id"],
         "pip_box_id": text_value(source.get("pip_box_id", defaults["pip_box_id"])) if text_value(source.get("pip_box_id", defaults["pip_box_id"])) in group_ids["pip_box"] else defaults["pip_box_id"],
         "background_id": text_value(source.get("background_id", defaults["background_id"])) if text_value(source.get("background_id", defaults["background_id"])) in group_ids["background"] else defaults["background_id"],
+        "visuals_cams_id": text_value(source.get("visuals_cams_id", defaults["visuals_cams_id"])) if text_value(source.get("visuals_cams_id", defaults["visuals_cams_id"])) in group_ids["visuals_cams"] else defaults["visuals_cams_id"],
         "scene_id": text_value(source.get("scene_id", defaults["scene_id"])) if text_value(source.get("scene_id", defaults["scene_id"])) in scene_ids else defaults["scene_id"],
         "stop_generator": bool_from_payload(source.get("stop_generator", True), True),
     }
@@ -1481,6 +1489,7 @@ def normalize_show_sequences(raw: Any, preset_names: list[str]) -> dict[str, dic
                     "main_box_id": text_value(raw_step.get("main_box_id", "")),
                     "pip_box_id": text_value(raw_step.get("pip_box_id", "")),
                     "background_id": text_value(raw_step.get("background_id", "")),
+                    "visuals_cams_id": text_value(raw_step.get("visuals_cams_id", "")),
                     "scene_id": text_value(raw_step.get("scene_id", "")),
                 }
             )
@@ -3052,14 +3061,14 @@ class ShowEngine:
         self.bpm_flip_count = 0
         self.bpm_last_flip_time = ""
         self.bpm_last_flip_monotonic = 0.0
-        self.last_camera_buttons = {"main_box": "", "pip_box": "", "background": "", "scene": ""}
+        self.last_camera_buttons = {"main_box": "", "pip_box": "", "background": "", "visuals_cams": "", "scene": ""}
         self.last_visual_button = ""
         self.last_visual_by_layer = {str(layer): "" for layer in range(1, VISUAL_LAYER_COUNT + 1)}
         self.delivery_status = {"lights": {"last_sent": "", "count": 0}, "visuals": {"last_sent": "", "count": 0}, "cameras": {"last_sent": "", "count": 0}}
         self.active_generative_visual = dict(DEFAULT_GENERATIVE_VISUAL)
         self.active_look_name = ""
         self.active_show_step = ""
-        self.camera_opacity = {"main_box": 100, "pip_box": 100, "background": 100}
+        self.camera_opacity = {"main_box": 100, "pip_box": 100, "background": 100, "visuals_cams": 100}
         self.visual_opacity = 100
         self.now_playing_opacity = 100
         self.visual_slider_values: dict[str, int] = {}
@@ -3402,6 +3411,7 @@ class ShowEngine:
                 "main_box_id": self.last_camera_buttons.get("main_box", ""),
                 "pip_box_id": self.last_camera_buttons.get("pip_box", ""),
                 "background_id": self.last_camera_buttons.get("background", ""),
+                "visuals_cams_id": self.last_camera_buttons.get("visuals_cams", ""),
                 "scene_id": self.last_camera_buttons.get("scene", ""),
             }
             self.state.source = f"performance:{name}"
@@ -6050,7 +6060,7 @@ class ShowEngine:
                 items.append(("visual", visual_item))
 
         camera_config = normalize_camera_controls(config.get("camera_controls", {}))
-        for group_key in ("main_box", "pip_box", "background"):
+        for group_key in ("main_box", "pip_box", "background", "visuals_cams"):
             camera_id = text_value(link.get(f"{group_key}_id", ""))
             if not camera_id:
                 continue
@@ -6295,6 +6305,7 @@ class ShowEngine:
             "main_box": safety["main_box_id"],
             "pip_box": safety["pip_box_id"],
             "background": safety["background_id"],
+            "visuals_cams": safety["visuals_cams_id"],
             "scene": safety["scene_id"],
         }
         camera_config = normalize_camera_controls(config.get("camera_controls", {}))
@@ -6318,7 +6329,7 @@ class ShowEngine:
                 else:
                     self.last_camera_buttons[kind] = item_id
         self.record_delivery("visuals", [item for item in sent if item.get("kind") == "visual"])
-        self.record_delivery("cameras", [item for item in sent if item.get("kind") in {"main_box", "pip_box", "background", "scene"}])
+        self.record_delivery("cameras", [item for item in sent if item.get("kind") in {"main_box", "pip_box", "background", "visuals_cams", "scene"}])
         with self.lock:
             self.state.source = "panic safe"
             self.set_event("PANIC SAFE recalled the configured safe state")

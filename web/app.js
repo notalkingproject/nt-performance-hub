@@ -219,11 +219,13 @@ const cameraContainers = {
   main_box: document.querySelector("#mainBoxCams"),
   pip_box: document.querySelector("#pipBoxCams"),
   background: document.querySelector("#backgroundCams"),
+  visuals_cams: document.querySelector("#visualsCams"),
 };
 const cameraOpacityControls = {
   main_box: document.querySelector("#mainBoxCamOpacityControl"),
   pip_box: document.querySelector("#pipBoxCamOpacityControl"),
   background: document.querySelector("#backgroundCamOpacityControl"),
+  visuals_cams: document.querySelector("#visualsCamOpacityControl"),
 };
 
 const sceneControls = document.querySelector("#sceneControls");
@@ -470,6 +472,7 @@ const SEQUENCE_BANK_MODES = [
   ["main_box", "Main Cam"],
   ["pip_box", "PIP Cam"],
   ["background", "BG Cam"],
+  ["visuals_cams", "Visuals Cam"],
   ["scene", "Scenes"],
 ];
 const GENERATIVE_SLIDER_FIELDS = [
@@ -1006,6 +1009,7 @@ function stagePerformanceLook(name, source = "") {
     main_box_id: link.main_box_id || "",
     pip_box_id: link.pip_box_id || "",
     background_id: link.background_id || "",
+    visuals_cams_id: link.visuals_cams_id || "",
     scene_id: link.scene_id || "",
   };
   stagedPerformanceLookName = name;
@@ -1035,6 +1039,7 @@ function stagedCueSummary() {
   if (cue.main_box_id) parts.push(`Main: ${optionLabel(camera.groups?.main_box, cue.main_box_id, cue.main_box_id)}`);
   if (cue.pip_box_id) parts.push(`PIP: ${optionLabel(camera.groups?.pip_box, cue.pip_box_id, cue.pip_box_id)}`);
   if (cue.background_id) parts.push(`BG: ${optionLabel(camera.groups?.background, cue.background_id, cue.background_id)}`);
+  if (cue.visuals_cams_id) parts.push(`Visuals Cam: ${optionLabel(camera.groups?.visuals_cams, cue.visuals_cams_id, cue.visuals_cams_id)}`);
   if (cue.scene_id) parts.push(`Scene: ${optionLabel(camera.scenes, cue.scene_id, cue.scene_id)}`);
   if (cue.generator_preset) parts.push(`Generator: ${generativePresetOptions()[cue.generator_preset]?.name || cue.generator_preset}`);
   return parts;
@@ -1051,7 +1056,7 @@ async function launchStagedPerformanceLook() {
     const linked = cue.look ? appSettings?.preset_links?.[cue.look] || {} : {};
     if (cue.look) await sendCommandForResult(linkedLookPayload(cue.look));
     if (cue.visual_id && cue.visual_id !== linked.visual_id) await sendCommandForResult({ command: "visual_trigger", id: cue.visual_id });
-    for (const group of ["main_box", "pip_box", "background"]) {
+    for (const group of ["main_box", "pip_box", "background", "visuals_cams"]) {
       if (cue[`${group}_id`] && cue[`${group}_id`] !== linked[`${group}_id`]) await sendCommandForResult({ command: "camera_trigger", kind: "camera", group, id: cue[`${group}_id`] });
     }
     if (cue.scene_id && cue.scene_id !== linked.scene_id) await sendCommandForResult({ command: "camera_trigger", kind: "scene", id: cue.scene_id });
@@ -1074,6 +1079,7 @@ const FAVORITE_CATEGORIES = [
   ["main_box", "Main Cams"],
   ["pip_box", "PIP Cams"],
   ["background", "BG Cams"],
+  ["visuals_cams", "Visuals Cams"],
   ["scenes", "Scenes"],
   ["generator", "Generator"],
 ];
@@ -1091,7 +1097,7 @@ function favoriteChoices(category) {
   const camera = appSettings?.camera_controls || {};
   if (category === "looks") return Object.keys(presetData?.groups?.performance || {}).map((id) => ({ id, label: id }));
   if (category === "visuals") return (appSettings?.visual_controls || []).map((item) => ({ id: item.id, label: item.label || item.name || item.id }));
-  if (["main_box", "pip_box", "background"].includes(category)) return (camera.groups?.[category] || []).map((item) => ({ id: item.id, label: item.label || item.name || item.id }));
+  if (["main_box", "pip_box", "background", "visuals_cams"].includes(category)) return (camera.groups?.[category] || []).map((item) => ({ id: item.id, label: item.label || item.name || item.id }));
   if (category === "scenes") return (camera.scenes || []).map((item) => ({ id: item.id, label: item.label || item.name || item.id }));
   if (category === "generator") return Object.entries(generativePresetOptions()).map(([id, item]) => ({ id, label: item.name || id }));
   return [];
@@ -1108,7 +1114,7 @@ function favoriteQuickEditTarget(category, id) {
     const item = (appSettings?.visual_controls || []).find((candidate) => candidate.id === id);
     return item ? () => openVisualClipOscEditor(item, visualLayerNumber(item), visualClipNumber(item)) : null;
   }
-  if (["main_box", "pip_box", "background"].includes(category)) {
+  if (["main_box", "pip_box", "background", "visuals_cams"].includes(category)) {
     const item = (cameraConfig.groups?.[category] || []).find((candidate) => candidate.id === id);
     return item ? () => openCameraOscEditor(category, item) : null;
   }
@@ -1317,7 +1323,7 @@ function renderFavoriteBankSurface() {
 function triggerFavorite(category, id) {
   if (category === "looks") return dispatchPerformanceLook(id, "favorite bank");
   if (category === "visuals") return dispatchVisualCue(id);
-  if (["main_box", "pip_box", "background"].includes(category)) return dispatchCameraCue(category, id);
+  if (["main_box", "pip_box", "background", "visuals_cams"].includes(category)) return dispatchCameraCue(category, id);
   if (category === "scenes") return dispatchCameraCue("scene", id);
   if (category === "generator") return applyGenerativePreset(id);
 }
@@ -1462,6 +1468,7 @@ function renderPanicSafeEditor() {
     ["main_box_id", "Safe main cam", favoriteChoices("main_box")],
     ["pip_box_id", "Safe PIP cam", favoriteChoices("pip_box")],
     ["background_id", "Safe background cam", favoriteChoices("background")],
+    ["visuals_cams_id", "Safe visuals cam", favoriteChoices("visuals_cams")],
     ["scene_id", "Safe scene", favoriteChoices("scenes")],
   ];
   fields.forEach(([key, label, options]) => {
@@ -1601,6 +1608,7 @@ function lookCueItems(link = {}, cameraConfig = {}) {
     ["Main Cam", optionLabel(cameraConfig.groups?.main_box, link.main_box_id)],
     ["PIP Cam", optionLabel(cameraConfig.groups?.pip_box, link.pip_box_id)],
     ["BG Cam", optionLabel(cameraConfig.groups?.background, link.background_id)],
+    ["Visuals Cam", optionLabel(cameraConfig.groups?.visuals_cams, link.visuals_cams_id)],
     ["Scene", optionLabel(cameraConfig.scenes, link.scene_id)],
   ];
 }
@@ -2367,7 +2375,7 @@ function cameraOscSectionKey(groupKey) {
 }
 
 function cameraQuickEditLabel(groupKey, item) {
-  const groupLabel = groupKey === "main_box" ? "Main Cam" : groupKey === "pip_box" ? "PIP Cam" : groupKey === "background" ? "BG Cam" : "Scene";
+  const groupLabel = groupKey === "main_box" ? "Main Cam" : groupKey === "pip_box" ? "PIP Cam" : groupKey === "background" ? "BG Cam" : groupKey === "visuals_cams" ? "Visuals Cam" : "Scene";
   return `${groupLabel}: ${item?.label || item?.name || item?.id || "Camera"}`;
 }
 
@@ -2535,6 +2543,7 @@ function renderOverviewCameras() {
     ["Main", "main_box", cameraConfig.groups?.main_box || []],
     ["PIP", "pip_box", cameraConfig.groups?.pip_box || []],
     ["BG", "background", cameraConfig.groups?.background || []],
+    ["Visuals", "visuals_cams", cameraConfig.groups?.visuals_cams || []],
     ["Scenes", "scene", cameraConfig.scenes || []],
   ];
   for (const [label, groupKey, items] of groups) {
@@ -2561,7 +2570,7 @@ function renderOverviewCameras() {
     group.append(title, grid);
     overviewCameraGrid.append(group);
   }
-  for (const groupKey of ["main_box", "pip_box", "background"]) {
+  for (const groupKey of ["main_box", "pip_box", "background", "visuals_cams"]) {
     const mixGroup = document.createElement("div");
     mixGroup.className = "overview-camera-group overview-camera-opacity-group";
     const mixTitle = document.createElement("strong");
@@ -2721,14 +2730,16 @@ function renderActiveMomentStrip(show) {
   const visualLabel = staged.visual_id
     ? `Next: ${optionLabel(appSettings.visual_controls, staged.visual_id, staged.visual_id)}`
     : optionLabel(appSettings.visual_controls, show?.last_visual_button, "-");
-  const stagedCamId = staged.scene_id || staged.main_box_id || staged.pip_box_id || staged.background_id || "";
+  const stagedCamId = staged.scene_id || staged.main_box_id || staged.pip_box_id || staged.background_id || staged.visuals_cams_id || "";
   const stagedCamLabel = staged.scene_id
     ? optionLabel(appSettings.camera_controls?.scenes, staged.scene_id, staged.scene_id)
     : staged.main_box_id
       ? optionLabel(appSettings.camera_controls?.groups?.main_box, staged.main_box_id, staged.main_box_id)
       : staged.pip_box_id
         ? optionLabel(appSettings.camera_controls?.groups?.pip_box, staged.pip_box_id, staged.pip_box_id)
-        : optionLabel(appSettings.camera_controls?.groups?.background, staged.background_id, staged.background_id);
+        : staged.background_id
+          ? optionLabel(appSettings.camera_controls?.groups?.background, staged.background_id, staged.background_id)
+          : optionLabel(appSettings.camera_controls?.groups?.visuals_cams, staged.visuals_cams_id, staged.visuals_cams_id);
   const cameraScene = stagedCamId ? `Next: ${stagedCamLabel}` : selectedCameraLabel("scene");
   const stagedGenerator = staged.generator_preset ? generativePresetOptions()[staged.generator_preset]?.name || staged.generator_preset : "";
   const items = [
@@ -2813,7 +2824,7 @@ async function triggerOverviewSequenceCue(index) {
 function sequenceStepType(step) {
   if (step?.look) return "look";
   if (step?.visual_id) return "visual";
-  if (step?.scene_id || step?.main_box_id || step?.pip_box_id || step?.background_id) return "camera";
+  if (step?.scene_id || step?.main_box_id || step?.pip_box_id || step?.background_id || step?.visuals_cams_id) return "camera";
   return "cue";
 }
 
@@ -3685,6 +3696,7 @@ function makeSequenceLookPreview(step) {
     ["Main", optionLabel(cameraConfig.groups?.main_box, step.main_box_id || link.main_box_id)],
     ["PIP", optionLabel(cameraConfig.groups?.pip_box, step.pip_box_id || link.pip_box_id)],
     ["BG", optionLabel(cameraConfig.groups?.background, step.background_id || link.background_id)],
+    ["Visuals", optionLabel(cameraConfig.groups?.visuals_cams, step.visuals_cams_id || link.visuals_cams_id)],
     ["Scene", optionLabel(cameraConfig.scenes, step.scene_id || link.scene_id)],
   ];
   for (const [label, value] of outputItems) {
@@ -4284,6 +4296,7 @@ function renderSelectionSummary(show) {
       optionLabel(cameraConfig.groups?.main_box, selected.main_box, ""),
       optionLabel(cameraConfig.groups?.pip_box, selected.pip_box, ""),
       optionLabel(cameraConfig.groups?.background, selected.background, ""),
+      optionLabel(cameraConfig.groups?.visuals_cams, selected.visuals_cams, ""),
       optionLabel(cameraConfig.scenes, selected.scene, ""),
     ].filter(Boolean);
     selectedCameras.textContent = labels.length ? labels.join(" / ") : "-";
@@ -4671,18 +4684,21 @@ const cameraOpacityLabels = {
   main_box: "Main Box Mix",
   pip_box: "PIP Box Mix",
   background: "BG Cam Mix",
+  visuals_cams: "Visuals Cam Mix",
 };
 
 const cameraOpacityShortLabels = {
   main_box: "Main Mix",
   pip_box: "PIP Mix",
   background: "BG Mix",
+  visuals_cams: "Visuals Mix",
 };
 
 const cameraOpacityClassNames = {
   main_box: "main-box-camera-opacity-control",
   pip_box: "pip-box-camera-opacity-control",
   background: "background-camera-opacity-control",
+  visuals_cams: "visuals-camera-opacity-control",
 };
 
 function cameraOpacityLabel(groupKey) {
@@ -5440,6 +5456,7 @@ function renderPresetLinks() {
       makePresetLinkField("Main Cam", selectForItems("main_box_id", cameraConfig.groups?.main_box || [], link.main_box_id, "None", markDirty)),
       makePresetLinkField("PIP Cam", selectForItems("pip_box_id", cameraConfig.groups?.pip_box || [], link.pip_box_id, "None", markDirty)),
       makePresetLinkField("Background", selectForItems("background_id", cameraConfig.groups?.background || [], link.background_id, "None", markDirty)),
+      makePresetLinkField("Visuals Cam", selectForItems("visuals_cams_id", cameraConfig.groups?.visuals_cams || [], link.visuals_cams_id, "None", markDirty)),
       makePresetLinkField("Scene", selectForItems("scene_id", cameraConfig.scenes || [], link.scene_id, "None", markDirty)),
     );
 
@@ -5549,6 +5566,7 @@ function renderLookBuilder() {
     makeBuilderSelect("builder_main", "Main Cam", selectForItems("builder_main", cameraConfig.groups?.main_box || [], link.main_box_id, "None", markDirty)),
     makeBuilderSelect("builder_pip", "PIP Cam", selectForItems("builder_pip", cameraConfig.groups?.pip_box || [], link.pip_box_id, "None", markDirty)),
     makeBuilderSelect("builder_background", "Background", selectForItems("builder_background", cameraConfig.groups?.background || [], link.background_id, "None", markDirty)),
+    makeBuilderSelect("builder_visuals_cams", "Visuals Cam", selectForItems("builder_visuals_cams", cameraConfig.groups?.visuals_cams || [], link.visuals_cams_id, "None", markDirty)),
     makeBuilderSelect("builder_scene", "Scene", selectForItems("builder_scene", cameraConfig.scenes || [], link.scene_id, "None", markDirty)),
   );
 }
@@ -6571,6 +6589,7 @@ function renderCamerasOscForm() {
     ["main_box", "Main Box"],
     ["pip_box", "PIP Box"],
     ["background", "Background"],
+    ["visuals_cams", "Visuals Cams"],
     ["scenes", "Scenes"],
 
     ["all", "All"],
@@ -6590,6 +6609,7 @@ function renderCamerasOscForm() {
     main_box: "Main Box Cam OSC Addresses",
     pip_box: "PIP Box Cam OSC Addresses",
     background: "Background Cam OSC Addresses",
+    visuals_cams: "Visuals Cam OSC Addresses",
   };
   for (const [groupKey, group] of Object.entries(cameraConfig.groups || {})) {
     const fieldset = makeCameraOscFieldset(groupKey, groupLabels[groupKey] || groupKey, "Button Label");
@@ -6783,7 +6803,7 @@ function renderSequenceLookBank() {
     return;
   }
 
-  if (["main_box", "pip_box", "background"].includes(sequenceBankMode)) {
+  if (["main_box", "pip_box", "background", "visuals_cams"].includes(sequenceBankMode)) {
     const cameraConfig = appSettings?.camera_controls || {};
     renderSequenceItemBank(cameraConfig.groups?.[sequenceBankMode] || [], (item) => applySequenceCuePatch({ [`${sequenceBankMode}_id`]: item.id }), "No camera buttons configured.");
     return;
@@ -7020,6 +7040,7 @@ function makeSequenceStepRow(step, index, totalSteps) {
     wrapSequenceField("Main Cam", selectForItems(`sequence_main_${index}`, cameraConfig.groups?.main_box || [], step.main_box_id, "Use look", markSequenceDirty)),
     wrapSequenceField("PIP Cam", selectForItems(`sequence_pip_${index}`, cameraConfig.groups?.pip_box || [], step.pip_box_id, "Use look", markSequenceDirty)),
     wrapSequenceField("BG Cam", selectForItems(`sequence_background_${index}`, cameraConfig.groups?.background || [], step.background_id, "Use look", markSequenceDirty)),
+    wrapSequenceField("Visuals Cam", selectForItems(`sequence_visuals_cams_${index}`, cameraConfig.groups?.visuals_cams || [], step.visuals_cams_id, "Use look", markSequenceDirty)),
     wrapSequenceField("Scene", selectForItems(`sequence_scene_${index}`, cameraConfig.scenes || [], step.scene_id, "Use look", markSequenceDirty)),
   );
 
@@ -7115,6 +7136,7 @@ function collectShowSequenceSteps() {
       main_box_id: row.querySelector(`[name^="sequence_main_"]`)?.value || "",
       pip_box_id: row.querySelector(`[name^="sequence_pip_"]`)?.value || "",
       background_id: row.querySelector(`[name^="sequence_background_"]`)?.value || "",
+      visuals_cams_id: row.querySelector(`[name^="sequence_visuals_cams_"]`)?.value || "",
       scene_id: row.querySelector(`[name^="sequence_scene_"]`)?.value || "",
     });
     row.dataset.index = String(index);
@@ -7210,7 +7232,7 @@ function sequenceStepDurationMs(step) {
 }
 
 function sequenceStepHasAction(step) {
-  return Boolean(step?.look || step?.visual_id || step?.main_box_id || step?.pip_box_id || step?.background_id || step?.scene_id);
+  return Boolean(step?.look || step?.visual_id || step?.main_box_id || step?.pip_box_id || step?.background_id || step?.visuals_cams_id || step?.scene_id);
 }
 
 function sequenceStepLabel(step) {
@@ -7220,6 +7242,7 @@ function sequenceStepLabel(step) {
   if (step?.main_box_id) return optionLabel(cameraConfig.groups?.main_box, step.main_box_id, step.main_box_id);
   if (step?.pip_box_id) return optionLabel(cameraConfig.groups?.pip_box, step.pip_box_id, step.pip_box_id);
   if (step?.background_id) return optionLabel(cameraConfig.groups?.background, step.background_id, step.background_id);
+  if (step?.visuals_cams_id) return optionLabel(cameraConfig.groups?.visuals_cams, step.visuals_cams_id, step.visuals_cams_id);
   if (step?.scene_id) return optionLabel(cameraConfig.scenes, step.scene_id, step.scene_id);
   return "Cue";
 }
@@ -7258,6 +7281,7 @@ async function triggerSequenceStep(index, providedSteps = null, transportLabel =
   if (step.main_box_id) await sendCommandForResult({ command: "camera_trigger", kind: "camera", group: "main_box", id: step.main_box_id });
   if (step.pip_box_id) await sendCommandForResult({ command: "camera_trigger", kind: "camera", group: "pip_box", id: step.pip_box_id });
   if (step.background_id) await sendCommandForResult({ command: "camera_trigger", kind: "camera", group: "background", id: step.background_id });
+  if (step.visuals_cams_id) await sendCommandForResult({ command: "camera_trigger", kind: "camera", group: "visuals_cams", id: step.visuals_cams_id });
   if (step.scene_id) await sendCommandForResult({ command: "camera_trigger", kind: "scene", id: step.scene_id });
   await loadStatus();
   return true;
@@ -7830,6 +7854,7 @@ function collectLookBuilderRoutingPayload(nameOverride = "") {
     main_box_id: lookBuilderForm.elements.builder_main?.value || "",
     pip_box_id: lookBuilderForm.elements.builder_pip?.value || "",
     background_id: lookBuilderForm.elements.builder_background?.value || "",
+    visuals_cams_id: lookBuilderForm.elements.builder_visuals_cams?.value || "",
     scene_id: lookBuilderForm.elements.builder_scene?.value || "",
   };
   return { preset_links: links };
@@ -7891,6 +7916,7 @@ function collectPresetCardRoutingPayload(name, form) {
     main_box_id: form.elements.main_box_id?.value || "",
     pip_box_id: form.elements.pip_box_id?.value || "",
     background_id: form.elements.background_id?.value || "",
+    visuals_cams_id: form.elements.visuals_cams_id?.value || "",
     scene_id: form.elements.scene_id?.value || "",
   };
   return { preset_links: links };
@@ -7999,9 +8025,10 @@ function makePresetLinkSettingRow(presetName, index) {
   const main = selectForItems(`preset_link_main_${index}`, cameraConfig.groups?.main_box || [], link.main_box_id, "None", markDirty);
   const pip = selectForItems(`preset_link_pip_${index}`, cameraConfig.groups?.pip_box || [], link.pip_box_id, "None", markDirty);
   const background = selectForItems(`preset_link_background_${index}`, cameraConfig.groups?.background || [], link.background_id, "None", markDirty);
+  const visualsCams = selectForItems(`preset_link_visuals_cams_${index}`, cameraConfig.groups?.visuals_cams || [], link.visuals_cams_id, "None", markDirty);
   const scene = selectForItems(`preset_link_scene_${index}`, cameraConfig.scenes || [], link.scene_id, "None", markDirty);
 
-  row.append(name, nowPlaying, nowPlayingOpacity, section, visual, main, pip, background, scene);
+  row.append(name, nowPlaying, nowPlayingOpacity, section, visual, main, pip, background, visualsCams, scene);
   return row;
 }
 
@@ -8296,6 +8323,7 @@ function collectLookLinksPayload() {
       main_box_id: data.get(`preset_link_main_${index}`) || "",
       pip_box_id: data.get(`preset_link_pip_${index}`) || "",
       background_id: data.get(`preset_link_background_${index}`) || "",
+      visuals_cams_id: data.get(`preset_link_visuals_cams_${index}`) || "",
       scene_id: data.get(`preset_link_scene_${index}`) || "",
     };
   });

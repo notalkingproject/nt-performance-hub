@@ -2164,7 +2164,7 @@ h2 {
 
 .camera-layout {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -2192,6 +2192,10 @@ h2 {
 
 .camera-layout > div:nth-child(3) {
   --camera-group-accent: #ffbf3f;
+}
+
+.camera-layout > div:nth-child(4) {
+  --camera-group-accent: #7dff9f;
 }
 
 .camera-layout > div h3 {
@@ -2274,7 +2278,8 @@ h2 {
 
 .main-box-camera-opacity-control,
 .pip-box-camera-opacity-control,
-.background-camera-opacity-control {
+.background-camera-opacity-control,
+.visuals-camera-opacity-control {
   border-color: rgba(255, 191, 63, 0.42);
 }
 
