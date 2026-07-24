@@ -1,0 +1,1088 @@
+{
+  "app": "NT Performance Hub",
+  "type": "osc-settings-backup",
+  "version": 1,
+  "exported_at": "2026-07-23T20:25:28",
+  "settings": {
+    "resolume_host": "127.0.0.1",
+    "resolume_port": 7000,
+    "beatlink_host": "",
+    "beatlink_port": 8088,
+    "beatlink_base_url": "",
+    "blt_params_url": "http://127.0.0.1:17081/params.json",
+    "network_routes": {
+      "beatlink_machine": "pc",
+      "beatlink_port": 17081,
+      "resolume_machine": "pc",
+      "resolume_port": 7000
+    },
+    "osc_targets": [
+      {
+        "id": "auto_laptop_1",
+        "label": "Laptop OSC Main",
+        "host": "127.0.0.1",
+        "port": 7000,
+        "enabled": true,
+        "primary": true,
+        "source": "auto"
+      },
+      {
+        "id": "auto_laptop_2",
+        "label": "Laptop OSC Wi-Fi",
+        "host": "192.168.1.184",
+        "port": 7000,
+        "enabled": true,
+        "primary": false,
+        "source": "auto"
+      },
+      {
+        "id": "auto_pc_2",
+        "label": "PC OSC Wi-Fi",
+        "host": "192.168.1.182",
+        "port": 7000,
+        "enabled": true,
+        "primary": false,
+        "source": "auto"
+      }
+    ],
+    "link_labels": {
+      "1": "Color 1",
+      "2": "Color 2",
+      "3": "Motion / Energy",
+      "4": "Color 3",
+      "5": "Saturation",
+      "6": "Brightness",
+      "7": "FX / Pattern",
+      "8": "Pulse / Color 3"
+    },
+    "osc_addresses": {
+      "1": "/composition/layers/1/clips/1/dashboard/link1",
+      "2": "/composition/layers/2/clips/1/dashboard/link1",
+      "3": "/composition/layers/1/clips/2/dashboard/link3",
+      "4": "/composition/layers/3/clips/1/dashboard/link1",
+      "5": "/composition/layers/1/clips/2/dashboard/link5",
+      "6": "/composition/layers/1/clips/2/dashboard/link6",
+      "7": "/composition/layers/1/clips/2/dashboard/link7",
+      "8": "/composition/layers/1/clips/2/dashboard/link8"
+    },
+    "osc_extra_addresses": {
+      "1": [
+        "/composition/layers/15/clips/1/dashboard/link1",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "2": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "3": [
+        "",
+        ""
+      ],
+      "4": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "5": [
+        "",
+        ""
+      ],
+      "6": [
+        "",
+        ""
+      ],
+      "7": [
+        "",
+        ""
+      ],
+      "8": [
+        "",
+        ""
+      ]
+    },
+    "osc_output_notes": {
+      "1": [
+        "color 1 main",
+        "now playing color",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "2": [
+        "color 3 main",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "3": [
+        "",
+        "",
+        ""
+      ],
+      "4": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "5": [
+        "",
+        "",
+        ""
+      ],
+      "6": [
+        "",
+        "",
+        ""
+      ],
+      "7": [
+        "",
+        "",
+        ""
+      ],
+      "8": [
+        "",
+        "",
+        ""
+      ]
+    },
+    "blt_osc_outputs": [
+      {
+        "key": "title",
+        "label": "BLT Title",
+        "field": "title",
+        "address": "/composition/layers/17/clips/1/video/source/blocktextgenerator/text/params/lines",
+        "enabled": true
+      },
+      {
+        "key": "artist",
+        "label": "BLT Artist",
+        "field": "artist",
+        "address": "/composition/layers/16/clips/1/video/source/blocktextgenerator/text/params/lines",
+        "enabled": true
+      },
+      {
+        "key": "track",
+        "label": "BLT Track",
+        "field": "full_track",
+        "address": "/blt/track",
+        "enabled": true
+      },
+      {
+        "key": "track_info",
+        "label": "BLT Track Info",
+        "field": "track_info",
+        "address": "/blt/track-info",
+        "enabled": true
+      },
+      {
+        "key": "resolume_track_text",
+        "label": "Resolume Track Text",
+        "field": "full_track",
+        "address": "",
+        "enabled": true
+      },
+      {
+        "key": "resolume_track_info",
+        "label": "Resolume Track Info",
+        "field": "track_info",
+        "address": "",
+        "enabled": true
+      }
+    ],
+    "now_playing_opacity_address": "/composition/layers/45/video/opacity",
+    "visual_controls": [
+      {
+        "id": "visual_l1_off",
+        "index": 0,
+        "layer": 1,
+        "clip": 0,
+        "kind": "off",
+        "name": "Layer 1 Clips Off",
+        "label": "L1 X",
+        "address": ""
+      },
+      {
+        "id": "visual_1",
+        "index": 1,
+        "layer": 1,
+        "clip": 1,
+        "kind": "clip",
+        "name": "Layer 1 Clip 1",
+        "label": "L1 C1",
+        "address": "/composition/layers/7/clips/1/connect"
+      },
+      {
+        "id": "visual_2",
+        "index": 2,
+        "layer": 1,
+        "clip": 2,
+        "kind": "clip",
+        "name": "Layer 1 Clip 2",
+        "label": "L1 C2",
+        "address": "/composition/layers/7/clips/2/connect"
+      },
+      {
+        "id": "visual_3",
+        "index": 3,
+        "layer": 1,
+        "clip": 3,
+        "kind": "clip",
+        "name": "Layer 1 Clip 3",
+        "label": "L1 C3",
+        "address": "/composition/layers/7/clips/3/connect"
+      },
+      {
+        "id": "visual_4",
+        "index": 4,
+        "layer": 1,
+        "clip": 4,
+        "kind": "clip",
+        "name": "Layer 1 Clip 4",
+        "label": "L1 C4",
+        "address": "/composition/layers/7/clips/4/connect"
+      },
+      {
+        "id": "visual_5",
+        "index": 5,
+        "layer": 1,
+        "clip": 5,
+        "kind": "clip",
+        "name": "Layer 1 Clip 5",
+        "label": "L1 C5",
+        "address": "/composition/layers/7/clips/5/connect"
+      },
+      {
+        "id": "visual_6",
+        "index": 6,
+        "layer": 1,
+        "clip": 6,
+        "kind": "clip",
+        "name": "Layer 1 Clip 6",
+        "label": "L1 C6",
+        "address": "/composition/layers/7/clips/6/connect"
+      },
+      {
+        "id": "visual_7",
+        "index": 7,
+        "layer": 1,
+        "clip": 7,
+        "kind": "clip",
+        "name": "Layer 1 Clip 7",
+        "label": "L1 C7",
+        "address": "/composition/layers/7/clips/7/connect"
+      },
+      {
+        "id": "visual_8",
+        "index": 8,
+        "layer": 1,
+        "clip": 8,
+        "kind": "clip",
+        "name": "Layer 1 Clip 8",
+        "label": "L1 C8",
+        "address": "/composition/layers/7/clips/8/connect"
+      },
+      {
+        "id": "visual_9",
+        "index": 9,
+        "layer": 1,
+        "clip": 9,
+        "kind": "clip",
+        "name": "Layer 1 Clip 9",
+        "label": "L1 C9",
+        "address": "/composition/layers/7/clips/9/connect"
+      },
+      {
+        "id": "visual_10",
+        "index": 10,
+        "layer": 1,
+        "clip": 10,
+        "kind": "clip",
+        "name": "Layer 1 Clip 10",
+        "label": "L1 C10",
+        "address": "/composition/layers/7/clips/10/connect"
+      },
+      {
+        "id": "visual_l2_off",
+        "index": 0,
+        "layer": 2,
+        "clip": 0,
+        "kind": "off",
+        "name": "Layer 2 Clips Off",
+        "label": "L2 X",
+        "address": ""
+      },
+      {
+        "id": "visual_11",
+        "index": 11,
+        "layer": 2,
+        "clip": 1,
+        "kind": "clip",
+        "name": "Layer 2 Clip 1",
+        "label": "L2 C1",
+        "address": "/composition/layers/8/clips/1/connect"
+      },
+      {
+        "id": "visual_12",
+        "index": 12,
+        "layer": 2,
+        "clip": 2,
+        "kind": "clip",
+        "name": "Layer 2 Clip 2",
+        "label": "L2 C2",
+        "address": "/composition/layers/8/clips/2/connect"
+      },
+      {
+        "id": "visual_13",
+        "index": 13,
+        "layer": 2,
+        "clip": 3,
+        "kind": "clip",
+        "name": "Layer 2 Clip 3",
+        "label": "L2 C3",
+        "address": "/composition/layers/8/clips/3/connect"
+      },
+      {
+        "id": "visual_14",
+        "index": 14,
+        "layer": 2,
+        "clip": 4,
+        "kind": "clip",
+        "name": "Layer 2 Clip 4",
+        "label": "L2 C4",
+        "address": "/composition/layers/8/clips/4/connect"
+      },
+      {
+        "id": "visual_15",
+        "index": 15,
+        "layer": 2,
+        "clip": 5,
+        "kind": "clip",
+        "name": "Layer 2 Clip 5",
+        "label": "L2 C5",
+        "address": "/composition/layers/8/clips/5/connect"
+      },
+      {
+        "id": "visual_16",
+        "index": 16,
+        "layer": 2,
+        "clip": 6,
+        "kind": "clip",
+        "name": "Layer 2 Clip 6",
+        "label": "L2 C6",
+        "address": "/composition/layers/8/clips/6/connect"
+      },
+      {
+        "id": "visual_17",
+        "index": 17,
+        "layer": 2,
+        "clip": 7,
+        "kind": "clip",
+        "name": "Layer 2 Clip 7",
+        "label": "L2 C7",
+        "address": "/composition/layers/8/clips/7/connect"
+      },
+      {
+        "id": "visual_18",
+        "index": 18,
+        "layer": 2,
+        "clip": 8,
+        "kind": "clip",
+        "name": "Layer 2 Clip 8",
+        "label": "L2 C8",
+        "address": "/composition/layers/8/clips/8/connect"
+      },
+      {
+        "id": "visual_19",
+        "index": 19,
+        "layer": 2,
+        "clip": 9,
+        "kind": "clip",
+        "name": "Layer 2 Clip 9",
+        "label": "L2 C9",
+        "address": "/composition/layers/8/clips/9/connect"
+      },
+      {
+        "id": "visual_20",
+        "index": 20,
+        "layer": 2,
+        "clip": 10,
+        "kind": "clip",
+        "name": "Layer 2 Clip 10",
+        "label": "L2 C10",
+        "address": "/composition/layers/8/clips/10/connect"
+      },
+      {
+        "id": "visual_l3_off",
+        "index": 0,
+        "layer": 3,
+        "clip": 0,
+        "kind": "off",
+        "name": "Layer 3 Clips Off",
+        "label": "L3 X",
+        "address": ""
+      },
+      {
+        "id": "visual_21",
+        "index": 21,
+        "layer": 3,
+        "clip": 1,
+        "kind": "clip",
+        "name": "Layer 3 Clip 1",
+        "label": "L3 C1",
+        "address": "/composition/layers/9/clips/1/connect"
+      },
+      {
+        "id": "visual_22",
+        "index": 22,
+        "layer": 3,
+        "clip": 2,
+        "kind": "clip",
+        "name": "Layer 3 Clip 2",
+        "label": "L3 C2",
+        "address": "/composition/layers/9/clips/2/connect"
+      },
+      {
+        "id": "visual_23",
+        "index": 23,
+        "layer": 3,
+        "clip": 3,
+        "kind": "clip",
+        "name": "Layer 3 Clip 3",
+        "label": "L3 C3",
+        "address": "/composition/layers/9/clips/3/connect"
+      },
+      {
+        "id": "visual_24",
+        "index": 24,
+        "layer": 3,
+        "clip": 4,
+        "kind": "clip",
+        "name": "Layer 3 Clip 4",
+        "label": "L3 C4",
+        "address": "/composition/layers/9/clips/4/connect"
+      },
+      {
+        "id": "visual_25",
+        "index": 25,
+        "layer": 3,
+        "clip": 5,
+        "kind": "clip",
+        "name": "Layer 3 Clip 5",
+        "label": "L3 C5",
+        "address": "/composition/layers/9/clips/5/connect"
+      },
+      {
+        "id": "visual_26",
+        "index": 26,
+        "layer": 3,
+        "clip": 6,
+        "kind": "clip",
+        "name": "Layer 3 Clip 6",
+        "label": "L3 C6",
+        "address": "/composition/layers/9/clips/6/connect"
+      },
+      {
+        "id": "visual_27",
+        "index": 27,
+        "layer": 3,
+        "clip": 7,
+        "kind": "clip",
+        "name": "Layer 3 Clip 7",
+        "label": "L3 C7",
+        "address": "/composition/layers/9/clips/7/connect"
+      },
+      {
+        "id": "visual_28",
+        "index": 28,
+        "layer": 3,
+        "clip": 8,
+        "kind": "clip",
+        "name": "Layer 3 Clip 8",
+        "label": "L3 C8",
+        "address": "/composition/layers/9/clips/8/connect"
+      },
+      {
+        "id": "visual_29",
+        "index": 29,
+        "layer": 3,
+        "clip": 9,
+        "kind": "clip",
+        "name": "Layer 3 Clip 9",
+        "label": "L3 C9",
+        "address": "/composition/layers/9/clips/9/connect"
+      },
+      {
+        "id": "visual_30",
+        "index": 30,
+        "layer": 3,
+        "clip": 10,
+        "kind": "clip",
+        "name": "Layer 3 Clip 10",
+        "label": "L3 C10",
+        "address": "/composition/layers/9/clips/10/connect"
+      }
+    ],
+    "visual_slider_controls": [
+      {
+        "id": "visual_slider_1",
+        "index": 1,
+        "name": "Visual Opacity",
+        "label": "Visual Opacity",
+        "address": ""
+      },
+      {
+        "id": "visual_slider_2",
+        "index": 2,
+        "name": "Slider 2",
+        "label": "Slider 2",
+        "address": ""
+      },
+      {
+        "id": "visual_slider_3",
+        "index": 3,
+        "name": "Slider 3",
+        "label": "Slider 3",
+        "address": ""
+      },
+      {
+        "id": "visual_slider_4",
+        "index": 4,
+        "name": "Slider 4",
+        "label": "Slider 4",
+        "address": ""
+      },
+      {
+        "id": "visual_slider_5",
+        "index": 5,
+        "name": "Slider 5",
+        "label": "Slider 5",
+        "address": ""
+      }
+    ],
+    "visual_opacity_address": "",
+    "camera_controls": {
+      "groups": {
+        "main_box": [
+          {
+            "id": "main_box_1",
+            "group": "main_box",
+            "group_label": "Main Box Cams",
+            "column": 1,
+            "name": "Set 1",
+            "label": "Set 1",
+            "address": "/composition/layers/13/clips/1/connect"
+          },
+          {
+            "id": "main_box_2",
+            "group": "main_box",
+            "group_label": "Main Box Cams",
+            "column": 2,
+            "name": "Set 2",
+            "label": "Set 2",
+            "address": "/composition/layers/13/clips/2/connect"
+          },
+          {
+            "id": "main_box_3",
+            "group": "main_box",
+            "group_label": "Main Box Cams",
+            "column": 3,
+            "name": "Set 3",
+            "label": "Set 3",
+            "address": "/composition/layers/13/clips/3/connect"
+          },
+          {
+            "id": "main_box_4",
+            "group": "main_box",
+            "group_label": "Main Box Cams",
+            "column": 4,
+            "name": "Set 4",
+            "label": "Set 4",
+            "address": "/composition/layers/13/clips/4/connect"
+          }
+        ],
+        "pip_box": [
+          {
+            "id": "pip_box_1",
+            "group": "pip_box",
+            "group_label": "PIP Box Cams",
+            "column": 1,
+            "name": "Set 1",
+            "label": "Set 1",
+            "address": "/composition/layers/12/clips/1/connect"
+          },
+          {
+            "id": "pip_box_2",
+            "group": "pip_box",
+            "group_label": "PIP Box Cams",
+            "column": 2,
+            "name": "Set 2",
+            "label": "Set 2",
+            "address": "/composition/layers/12/clips/2/connect"
+          },
+          {
+            "id": "pip_box_3",
+            "group": "pip_box",
+            "group_label": "PIP Box Cams",
+            "column": 3,
+            "name": "Set 3",
+            "label": "Set 3",
+            "address": "/composition/layers/12/clips/3/connect"
+          },
+          {
+            "id": "pip_box_4",
+            "group": "pip_box",
+            "group_label": "PIP Box Cams",
+            "column": 4,
+            "name": "Set 4",
+            "label": "Set 4",
+            "address": "/composition/layers/12/clips/4/connect"
+          }
+        ],
+        "background": [
+          {
+            "id": "background_1",
+            "group": "background",
+            "group_label": "Background Cams",
+            "column": 1,
+            "name": "Set 1",
+            "label": "Set 1",
+            "address": "/composition/layers/11/clips/1/connect"
+          },
+          {
+            "id": "background_2",
+            "group": "background",
+            "group_label": "Background Cams",
+            "column": 2,
+            "name": "Set 2",
+            "label": "Set 2",
+            "address": "/composition/layers/11/clips/2/connect"
+          },
+          {
+            "id": "background_3",
+            "group": "background",
+            "group_label": "Background Cams",
+            "column": 3,
+            "name": "Set 3",
+            "label": "Set 3",
+            "address": "/composition/layers/11/clips/3/connect"
+          },
+          {
+            "id": "background_4",
+            "group": "background",
+            "group_label": "Background Cams",
+            "column": 4,
+            "name": "Set 4",
+            "label": "Set 4",
+            "address": "/composition/layers/11/clips/4/connect"
+          }
+        ]
+      },
+      "scenes": [
+        {
+          "id": "scene_1",
+          "index": 1,
+          "name": "Scene 1",
+          "label": "Scene 1",
+          "address": ""
+        },
+        {
+          "id": "scene_2",
+          "index": 2,
+          "name": "Scene 2",
+          "label": "Scene 2",
+          "address": ""
+        },
+        {
+          "id": "scene_3",
+          "index": 3,
+          "name": "Scene 3",
+          "label": "Scene 3",
+          "address": ""
+        },
+        {
+          "id": "scene_4",
+          "index": 4,
+          "name": "Scene 4",
+          "label": "Scene 4",
+          "address": ""
+        },
+        {
+          "id": "scene_5",
+          "index": 5,
+          "name": "Scene 5",
+          "label": "Scene 5",
+          "address": ""
+        },
+        {
+          "id": "scene_6",
+          "index": 6,
+          "name": "Scene 6",
+          "label": "Scene 6",
+          "address": ""
+        },
+        {
+          "id": "scene_7",
+          "index": 7,
+          "name": "Scene 7",
+          "label": "Scene 7",
+          "address": ""
+        },
+        {
+          "id": "scene_8",
+          "index": 8,
+          "name": "Scene 8",
+          "label": "Scene 8",
+          "address": ""
+        },
+        {
+          "id": "scene_9",
+          "index": 9,
+          "name": "Scene 9",
+          "label": "Scene 9",
+          "address": ""
+        },
+        {
+          "id": "scene_10",
+          "index": 10,
+          "name": "Scene 10",
+          "label": "Scene 10",
+          "address": ""
+        },
+        {
+          "id": "scene_11",
+          "index": 11,
+          "name": "Scene 11",
+          "label": "Scene 11",
+          "address": ""
+        },
+        {
+          "id": "scene_12",
+          "index": 12,
+          "name": "Scene 12",
+          "label": "Scene 12",
+          "address": ""
+        },
+        {
+          "id": "scene_13",
+          "index": 13,
+          "name": "Scene 13",
+          "label": "Scene 13",
+          "address": ""
+        },
+        {
+          "id": "scene_14",
+          "index": 14,
+          "name": "Scene 14",
+          "label": "Scene 14",
+          "address": ""
+        },
+        {
+          "id": "scene_15",
+          "index": 15,
+          "name": "Scene 15",
+          "label": "Scene 15",
+          "address": ""
+        }
+      ]
+    },
+    "camera_opacity_addresses": {
+      "main_box": "/composition/layers/13/video/opacity",
+      "pip_box": "/composition/layers/12/clips/1/video/opacity",
+      "background": "/composition/layers/11/video/opacity"
+    },
+    "camera_opacity_labels": {
+      "main_box": "Main Box Mix",
+      "pip_box": "PIP Box Mix",
+      "background": "BG Cam Mix"
+    },
+    "preset_links": {
+      "Look 1": {
+        "enabled": true,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 2": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 3": {
+        "enabled": true,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 4": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 5": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 6": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 7": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 8": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 9": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      },
+      "Look 10": {
+        "enabled": false,
+        "section_preset": "",
+        "now_playing_mode": "",
+        "now_playing_opacity": "",
+        "visual_id": "",
+        "main_box_id": "",
+        "pip_box_id": "",
+        "background_id": "",
+        "scene_id": "",
+        "generative_visual": {},
+        "bpm_enabled": false,
+        "bpm_running": false,
+        "bpm_follow_now_playing": false,
+        "bpm": 125.0,
+        "bpm_division": "1/4",
+        "bpm_flip_mode": "bars",
+        "bpm_seconds": 8.0,
+        "bpm_rotation_slots": []
+      }
+    },
+    "show_sequences": {
+      "Main Show": {
+        "name": "Main Show",
+        "loop": true,
+        "steps": [
+          {
+            "look": "Look 1",
+            "trigger_type": "after",
+            "amount": 14,
+            "unit": "bars",
+            "note": "Opening look",
+            "visual_id": "",
+            "main_box_id": "",
+            "pip_box_id": "pip_box_4",
+            "background_id": "",
+            "scene_id": ""
+          },
+          {
+            "look": "Look 3",
+            "trigger_type": "after",
+            "amount": 8,
+            "unit": "bars",
+            "note": "",
+            "visual_id": "",
+            "main_box_id": "",
+            "pip_box_id": "pip_box_3",
+            "background_id": "",
+            "scene_id": ""
+          },
+          {
+            "look": "Look 1",
+            "trigger_type": "after",
+            "amount": 2,
+            "unit": "bars",
+            "note": "",
+            "visual_id": "",
+            "main_box_id": "",
+            "pip_box_id": "pip_box_1",
+            "background_id": "",
+            "scene_id": ""
+          }
+        ]
+      }
+    },
+    "look_apply_lights": true,
+    "bpm_osc_bpm_address": "",
+    "bpm_osc_start_address": "",
+    "bpm_osc_resync_address": "/composition/tempocontroller/resync",
+    "bpm_osc_stop_address": ""
+  }
+}
