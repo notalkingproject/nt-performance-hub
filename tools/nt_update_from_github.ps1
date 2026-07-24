@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
-$ControlScript = Join-Path $PSScriptRoot "nt_server_control.ps1"
+$ActionScript = Join-Path $PSScriptRoot "nt_server_action.py"
 $HealthUrl = "http://127.0.0.1:$Port/health"
 
 function Test-Running {
@@ -22,6 +22,46 @@ function Invoke-Git($arguments) {
   if ($LASTEXITCODE -ne 0) { throw "git $($arguments -join ' ') failed." }
 }
 
+function Find-Python {
+  $venvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
+  if (Test-Path -LiteralPath $venvPython) {
+    return @{ FilePath = $venvPython; Arguments = @(); Label = $venvPython }
+  }
+
+  $py = Get-Command py -ErrorAction SilentlyContinue
+  if ($py) { return @{ FilePath = $py.Source; Arguments = @("-3"); Label = "py -3" } }
+
+  $python = Get-Command python -ErrorAction SilentlyContinue
+  if ($python) { return @{ FilePath = $python.Source; Arguments = @(); Label = "python" } }
+
+  $localPythonCandidates = @()
+  if ($env:LOCALAPPDATA) {
+    $localPythonCandidates += Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe"
+    $pythonRoot = Join-Path $env:LOCALAPPDATA "Programs\Python"
+    if (Test-Path -LiteralPath $pythonRoot) {
+      $localPythonCandidates += Get-ChildItem -LiteralPath $pythonRoot -Directory -Filter "Python3*" -ErrorAction SilentlyContinue |
+        Sort-Object Name -Descending |
+        ForEach-Object { Join-Path $_.FullName "python.exe" }
+    }
+  }
+  foreach ($candidate in ($localPythonCandidates | Select-Object -Unique)) {
+    if ($candidate -and (Test-Path -LiteralPath $candidate)) {
+      return @{ FilePath = $candidate; Arguments = @(); Label = $candidate }
+    }
+  }
+
+  throw "Python 3 was not found. Run Install NT Performance Hub.bat first, or install Python 3.11+ and try again."
+}
+
+function Invoke-ServerAction($action) {
+  if (-not (Test-Path -LiteralPath $ActionScript)) {
+    throw "Server action script was not found: $ActionScript"
+  }
+
+  $python = Find-Python
+  & $python.FilePath @($python.Arguments + @($ActionScript, $action, "--open", "--port", $Port))
+  if ($LASTEXITCODE -ne 0) { throw "$action failed." }
+}
 Write-Host "NT Performance Hub - Update From GitHub"
 Write-Host "Repo: $RepoRoot"
 Write-Host ""
@@ -57,15 +97,13 @@ Write-Host "Update complete."
 if ($wasRunning -and -not $NoRestartPrompt) {
   $answer = Read-Host "Restart NT Performance Hub now? [Y/n]"
   if ($answer.Trim().ToLowerInvariant() -notin @("n", "no")) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $ControlScript restart -OpenBrowser -Port $Port
-    if ($LASTEXITCODE -ne 0) { throw "Restart failed." }
+    Invoke-ServerAction "restart"
   } else {
     Write-Host "Leaving the currently running server alone. Restart later to use the updated code."
   }
 } elseif (-not $wasRunning) {
   $answer = Read-Host "Start NT Performance Hub now? [Y/n]"
   if ($answer.Trim().ToLowerInvariant() -notin @("n", "no")) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $ControlScript start -OpenBrowser -Port $Port
-    if ($LASTEXITCODE -ne 0) { throw "Start failed." }
+    Invoke-ServerAction "start"
   }
 }
